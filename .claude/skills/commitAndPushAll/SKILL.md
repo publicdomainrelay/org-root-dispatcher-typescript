@@ -13,9 +13,17 @@ Stage, commit, and push changes across multiple git repos under the org root
 in parallel. Each repo runs `git add`, `git commit`, `git push` independently.
 Results reported as a table.
 
+## HARD RULES
+
+- **NEVER include reference repos** — any repo under `.reference/` is a
+  read-only archive. Do NOT put them in the JSON payload. The script also
+  skips them automatically as defense-in-depth, but the agent MUST NOT
+  include them in the first place.
+
 ## Workflow
 
-1. Build a JSON payload describing what to commit:
+1. Build a JSON payload describing what to commit. NEVER include any repo
+   whose path starts with `.reference/`:
 
 ```json
 {

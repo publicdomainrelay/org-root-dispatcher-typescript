@@ -55,6 +55,11 @@ async function commitAndPush(repo: RepoCommit): Promise<CommitResult> {
   const cwd = `${ORG_ROOT}${repo.path}`;
   const name = repo.path;
 
+  // NEVER touch reference repos — they are read-only archives
+  if (name.startsWith(".reference/") || name === ".reference") {
+    return { repo: name, commit: "(ref)", pushed: "(skipped)", ok: true };
+  }
+
   try {
     if (repo.files && repo.files.length > 0) {
       for (const f of repo.files) {
