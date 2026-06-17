@@ -16,3 +16,6 @@
 [submodule "did-key-relay"]
 	path = did-key-relay
 	url = https://github.com/publicdomainrelay/did-key-relay
+[submodule "atproto-market"]
+	path = atproto-market
+	url = https://github.com/publicdomainrelay/atproto-market
