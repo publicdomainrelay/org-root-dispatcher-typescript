@@ -13,3 +13,6 @@
 [submodule "typescript-helpers"]
 	path = typescript-helpers
 	url = https://github.com/publicdomainrelay/typescript-helpers
+[submodule "did-key-relay"]
+	path = did-key-relay
+	url = https://github.com/publicdomainrelay/did-key-relay
