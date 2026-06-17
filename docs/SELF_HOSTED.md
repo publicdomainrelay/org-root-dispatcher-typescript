@@ -8,24 +8,24 @@ on demand.
 ## Architecture
 
 ```
-requester (atproto) ──RFP──▶ bidder ──POST /v2/droplets──▶ compute-provider
-                                        (DO-compatible API)       │
-                                                            Docker container
+requester (atproto) --RFP--> bidder --POST /v2/droplets--> compute-provider
+                                         (DO-compatible API)
+                                                             Docker container
 ```
 
 Two-process model:
 
-1. **Compute provider** — HTTP server with DO-compatible `/v2/*` endpoints.
+1. **Compute provider** -- HTTP server with DO-compatible `/v2/*` endpoints.
    Provisions Docker containers/VMs. Serves OIDC issuer routes.
-   Stateless — no atproto identity.
+   Stateless -- no atproto identity.
 
-2. **Bidder** — atproto agent. Registers `did:plc`, connects to XRPC relay,
+2. **Bidder** -- atproto agent. Registers `did:plc`, connects to XRPC relay,
    subscribes to RFPs, auto-responds with bids. On accept, forwards VM spec
    to compute provider.
 
 Bidder injects accept provenance bundle into cloud-init. Compute provider
 injects OIDC provisioning exchange. Both land as `write_files` entries in
-container cloud-init — they compose.
+container cloud-init -- they compose.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ container cloud-init — they compose.
 
 ## Quick start
 
-### Terminal 1 — Compute provider
+### Terminal 1 -- Compute provider
 
 ```bash
 cd /home/johnandersen777/src/publicdomainrelay
@@ -58,9 +58,9 @@ Starts on `http://localhost:8080`. Serves:
 | `/v1/oidc/prove` | POST | Prove container identity |
 
 Any bearer token accepted as `actx` (team UUID). Local mode: no JWT
-validation — token string becomes tenant key.
+validation -- token string becomes tenant key.
 
-### Terminal 2 — Bidder
+### Terminal 2 -- Bidder
 
 ```bash
 cd /home/johnandersen777/src/publicdomainrelay
@@ -81,7 +81,7 @@ At startup:
 5. Registers with market registry
 6. Starts heartbeat (updates discovery record every 60s)
 
-Bidder now ready. Listens for RFPs through relay — no public port needed.
+Bidder now ready. Listens for RFPs through relay -- no public port needed.
 
 ### Verify running
 
@@ -105,13 +105,13 @@ By default new `did:plc` registered every run. To reuse identity across
 restarts, export private key from first run and pass it back:
 
 ```bash
-# First run — note private key hex from startup logs
+# First run -- note private key hex from startup logs
 deno run -A atproto-market/hono-bidder/mod.ts \
   --compute-provider digitalocean \
   --compute-provider-token "test" \
   --compute-provider-base-url "http://localhost:8080"
 # Look for: {"event":"bidder_did_plc_registered","did":"did:plc:..."}
-# Private key hex derivable from keypair — save it.
+# Private key hex derivable from keypair -- save it.
 
 # Subsequent runs
 REPO_PRIVATE_KEY_HEX="<64-char-hex>" \
@@ -132,28 +132,28 @@ REPO_PRIVATE_KEY_HEX="<64-char-hex>" \
 | `--container-mode` | `CONTAINER_MODE` | `true` | Container mode (false = QEMU VM) |
 | `--vm-image` | `VM_IMAGE` | `atcr.io/.../ccripoc-qemu-runner` | Image for QEMU mode |
 | `--container-image` | `CONTAINER_IMAGE` | `container-runner-ubuntu:latest` | Image for container mode |
-| `--cache-dir` | `CACHE_DIR` | — | Temp file cache |
-| `--issuer-url` | `ISSUER_URL` | — | OIDC issuer base URL (defaults to `http://localhost:<port>`) |
+| `--cache-dir` | `CACHE_DIR` | -- | Temp file cache |
+| `--issuer-url` | `ISSUER_URL` | -- | OIDC issuer base URL (defaults to `http://localhost:<port>`) |
 | `--hostname` | `HOSTNAME` | `0.0.0.0` | Bind address |
 | `--log-level` | `LOG_LEVEL` | `info` | Min log level |
 | `--operator-handle` | `OPERATOR_HANDLE` | `did:plc:localhost` | Operator DID handle |
 | `--self-did` | `SELF_DID` | `did:plc:localhost` | This host's own DID |
 | `--digitalocean-base-url` | `DIGITALOCEAN_BASE_URL` | `https://droplet-oidc.its1337.com` | DO-compatible API base URL |
-| `--do-token` | `DO_TOKEN` | — | DigitalOcean API token |
+| `--do-token` | `DO_TOKEN` | -- | DigitalOcean API token |
 
 ### Bidder (`hono-bidder`)
 
 | Flag | Env var | Default | Description |
 |------|---------|---------|-------------|
 | `--port` | `PORT` | `0` | Listen port (0 = random) |
-| `--private-key-hex` | `REPO_PRIVATE_KEY_HEX` | — | Fixed identity key |
+| `--private-key-hex` | `REPO_PRIVATE_KEY_HEX` | -- | Fixed identity key |
 | `--plc-directory-url` | `PLC_DIRECTORY_URL` | `https://plc.directory` | PLC directory |
 | `--dispatcher-host` | `DISPATCHER_HOST` | `xrpc.fedproxy.com` | XRPC relay host |
 | `--label` | `BIDDER_LABEL` | `bidder` | Log/relay label |
-| `--compute-provider` | `COMPUTE_PROVIDER` | — | `local` or `digitalocean` |
-| `--compute-provider-token` | `COMPUTE_PROVIDER_TOKEN` | — | Auth token for provider API |
-| `--compute-provider-base-url` | `COMPUTE_PROVIDER_BASE_URL` | — | Provider API base URL |
-| `--registry-endpoint` | `REGISTRY_ENDPOINT` | — | Market registry endpoint |
+| `--compute-provider` | `COMPUTE_PROVIDER` | -- | `local` or `digitalocean` |
+| `--compute-provider-token` | `COMPUTE_PROVIDER_TOKEN` | -- | Auth token for provider API |
+| `--compute-provider-base-url` | `COMPUTE_PROVIDER_BASE_URL` | -- | Provider API base URL |
+| `--registry-endpoint` | `REGISTRY_ENDPOINT` | -- | Market registry endpoint |
 | `--heartbeat-interval-ms` | `HEARTBEAT_INTERVAL_MS` | `60000` | Discovery heartbeat |
 
 ## Using real DigitalOcean backend
@@ -161,13 +161,13 @@ REPO_PRIVATE_KEY_HEX="<64-char-hex>" \
 Replace local compute provider with real DO proxy:
 
 ```bash
-# Terminal 1 — DO proxy compute provider
+# Terminal 1 -- DO proxy compute provider
 deno run -A hono-compute-provider/hono-compute-provider/mod.ts \
   --provider digitalocean \
   --do-token "dop_v1_..." \
   --port 8080
 
-# Terminal 2 — Bidder pointing at it
+# Terminal 2 -- Bidder pointing at it
 deno run -A atproto-market/hono-bidder/mod.ts \
   --compute-provider digitalocean \
   --compute-provider-token "dop_v1_..." \
@@ -185,12 +185,12 @@ discovery heartbeat. Local compute provider signal handler runs
 When bidder receives accept, two cloud-init injection layers happen before
 container boots:
 
-1. **Bidder** (`injectAcceptBundle`) — wraps accept provenance (accept URI,
+1. **Bidder** (`injectAcceptBundle`) -- wraps accept provenance (accept URI,
    RFP refs, bid config refs) into `write_files` at
    `/root/secrets/publicdomainrelay.com/market/accept.json`. Container reads
    this to know which contract it fulfills.
 
-2. **Compute provider** (`ProvisioningData.create`) — wraps OIDC token
+2. **Compute provider** (`ProvisioningData.create`) -- wraps OIDC token
    exchange payload into `write_files`. Container authenticates with relay
    after boot (fedproxy-client + websocat).
 
