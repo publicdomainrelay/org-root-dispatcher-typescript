@@ -7,6 +7,17 @@ this file = **org root**.
 Always run `./scripts/find-all-package.ts | yq -P` on session start to see where
 everything lives.
 
+## Bash CWD
+
+Bash tool persists CWD across calls. `cd` in one call = CWD for next call.
+Always start every Bash command with `cd <absolute-path> &&` when targeting
+a specific workspace. Never assume CWD.
+
+```
+cd /home/johnandersen777/src/publicdomainrelay/hono-pds && deno test ...
+cd /home/johnandersen777/src/publicdomainrelay/hono-compute-provider && deno check ...
+```
+
 ## Layers
 
 Every capability ("concept") split 4 ways. Path shows layer:
