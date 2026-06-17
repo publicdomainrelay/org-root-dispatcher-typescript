@@ -67,6 +67,9 @@ sections.
 
 **Cross-repo**
 - Duplicate a util already in `typescript-helpers/lib/`. Check first.
+- Concept-specific constant/type in `typescript-helpers/`. Single-repo concept
+  lives in that repo's `lib/common/${concept}-common`. Only move to
+  `typescript-helpers/` when second repo needs it.
 
 **Code style**
 - Code comments. Names + types carry meaning.
