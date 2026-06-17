@@ -38,6 +38,10 @@ cli-args-env, http-error, hono-error-middleware, hono-factory-static-files-fs).
 Check there BEFORE writing any new `lib/common/` package. Two repos need it = it
 belongs there.
 
+## PATTERNS — ALWAYS DO
+
+- Structured log port via `onListen` when using `Deno.serve`
+
 ## ANTI-PATTERNS — NEVER DO
 
 Non-negotiable. Each breaks architecture. Detail + examples below in per-layer
