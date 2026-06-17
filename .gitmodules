@@ -1,0 +1,15 @@
+[submodule "deno-worker-sandbox"]
+	path = deno-worker-sandbox
+	url = https://github.com/publicdomainrelay/deno-hono-sandbox.git
+[submodule "hono-compute-provider"]
+	path = hono-compute-provider
+	url = https://github.com/publicdomainrelay/compute-provider-digitalocean.git
+[submodule "hono-jsr"]
+	path = hono-jsr
+	url = https://github.com/publicdomainrelay/hono-package-registry.git
+[submodule "hono-pds"]
+	path = hono-pds
+	url = https://github.com/publicdomainrelay/hono-pds.git
+[submodule "typescript-helpers"]
+	path = typescript-helpers
+	url = https://github.com/publicdomainrelay/typescript-helpers
