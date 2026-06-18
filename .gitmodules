@@ -19,3 +19,6 @@
 [submodule "atproto-market"]
 	path = atproto-market
 	url = https://github.com/publicdomainrelay/atproto-market
+[submodule ".reference/compute-contract-reference-implementation-poc"]
+	path = .reference/compute-contract-reference-implementation-poc
+	url = https://github.com/publicdomainrelay/compute-contract-reference-implementation-poc
