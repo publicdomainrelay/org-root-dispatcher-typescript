@@ -1,0 +1,43 @@
+$ cd hono-compute-provider/
+$ deno task test
+Task test deno test -A --no-check test/cli_smoke_test.ts test/oidc_workload_identity_integration_test.ts test/oidc_rbac_integration_test.ts test/oidc_rbac_container_integration_test.ts
+running 1 test from ./test/cli_smoke_test.ts
+[cli-smoke] hono-compute-provider --help ... ok (141ms)
+running 1 test from ./test/oidc_workload_identity_integration_test.ts
+[integration] OIDC workload identity provisioning flow ...Listening on http://127.0.0.1:52964/
+[integration] OIDC workload identity provisioning flow ... ok (4s)
+running 1 test from ./test/oidc_rbac_integration_test.ts
+[integration] RBAC-protected /v1/oidc/issue flow ...Listening on http://127.0.0.1:52969/
+Listening on http://127.0.0.1:52970/
+Listening on http://127.0.0.1:52971/
+[integration] RBAC-protected /v1/oidc/issue flow ... ok (2s)
+running 1 test from ./test/oidc_rbac_container_integration_test.ts
+[integration] Container receives workload token + RBAC issue ...Listening on http://127.0.0.1:52982/
+Listening on http://127.0.0.1:52983/
+Listening on http://0.0.0.0:52984/ (http://localhost:52984/)
+
+------- post-test output -------
+==> Starting container (ubuntu, tag=container-runner-ubuntu:latest)
+==> Container IP: 192.168.64.11
+==> Waiting for SSH...
+==> SSH ready! ssh agent@192.168.64.11
+    Container: test-rbac-bed370aa
+'[integration] Container receives workload token + RBAC issue' has been running for over (1m0s)
+'[integration] Container receives workload token + RBAC issue' has been running for over (2m0s)
+----- post-test output end -----
+[integration] Container receives workload token + RBAC issue ... FAILED (3m4s)
+
+ ERRORS
+
+[integration] Container receives workload token + RBAC issue => ./test/oidc_rbac_container_integration_test.ts:56:6
+error: Error: Token not found at /root/secrets/digitalocean.com/serviceaccount/token within 180000ms
+  throw new Error(`Token not found at ${TOKEN_PATH} within ${POLL_TIMEOUT_MS}ms`);
+        ^
+    at pollForToken (file:///Users/johnandersen777/src/publicdomainrelay/hono-compute-provider/test/oidc_rbac_container_integration_test.ts:49:9)
+    at async file:///Users/johnandersen777/src/publicdomainrelay/hono-compute-provider/test/oidc_rbac_container_integration_test.ts:180:27
+
+ FAILURES
+
+[integration] Container receives workload token + RBAC issue => ./test/oidc_rbac_container_integration_test.ts:56:6
+
+FAILED | 3 passed | 1 failed (3m11s)

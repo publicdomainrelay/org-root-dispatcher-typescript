@@ -1,0 +1,9 @@
+{
+  "name": "@publicdomainrelay/atproto-relay-abc",
+  "version": "0.0.0",
+  "license": "Unlicense",
+  "exports": "./mod.ts",
+  "imports": {
+    "@publicdomainrelay/atproto-relay-common": "jsr:@publicdomainrelay/atproto-relay-common@^0"
+  }
+}

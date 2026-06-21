@@ -1,0 +1,15 @@
+{
+  "version": "0.0.0",
+  "license": "Unlicense",
+  "imports": {
+    "@publicdomainrelay/hono-factory-atproto-relay-xrpc": "jsr:@publicdomainrelay/hono-factory-atproto-relay-xrpc@^0",
+    "@publicdomainrelay/cli-args-env": "jsr:@publicdomainrelay/cli-args-env@^0",
+    "@publicdomainrelay/logger": "jsr:@publicdomainrelay/logger@^0"
+  },
+  "compile": {
+    "include": ["cli-args-env.json", "config.json"]
+  },
+  "publish": {
+    "include": ["cli-args-env.json"]
+  }
+}

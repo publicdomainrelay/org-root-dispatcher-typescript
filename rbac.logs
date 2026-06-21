@@ -1,0 +1,110 @@
+[container-entrypoint] Launching systemctl-shim as PID 1
+[systemctl-shim] PID 1 supervisor starting
+[systemctl-shim] ssh.service: ExecStartPre /usr/sbin/sshd -t
+[systemctl-shim] cloud-init: using user-data from /tmp/user-data
+[systemctl-shim] cloud-init init --local
+[systemctl-shim] Starting ssh.service (simple)
+Cloud-init v. 26.1-0ubuntu2 running 'init-local' at Wed, 17 Jun 2026 09:43:49 +0000. Up 0.91 seconds.
+Server listening on 0.0.0.0 port 22.
+Server listening on :: port 22.
+2026-06-17 09:43:49,432 - log_util.py[WARNING]: Failed to non-persistently adjust the system hostname to container
+[systemctl-shim] cloud-init init
+Cloud-init v. 26.1-0ubuntu2 running 'init' at Wed, 17 Jun 2026 09:43:49 +0000. Up 1.43 seconds.
+ci-info: +++++++++++++++++++++++++++++++++++++++Net device info+++++++++++++++++++++++++++++++++++++++
+ci-info: +--------+------+------------------------------+---------------+--------+-------------------+
+ci-info: | Device |  Up  |           Address            |      Mask     | Scope  |     Hw-Address    |
+ci-info: +--------+------+------------------------------+---------------+--------+-------------------+
+ci-info: |  eth0  | True |        192.168.64.11         | 255.255.255.0 | global | f6:f7:79:35:d7:c7 |
+ci-info: |  eth0  | True | fe80::f4f7:79ff:fe35:d7c7/64 |       .       |  link  | f6:f7:79:35:d7:c7 |
+ci-info: |   lo   | True |          127.0.0.1           |   255.0.0.0   |  host  |         .         |
+ci-info: |   lo   | True |           ::1/128            |       .       |  host  |         .         |
+ci-info: +--------+------+------------------------------+---------------+--------+-------------------+
+ci-info: ++++++++++++++++++++++++++++++Route IPv4 info++++++++++++++++++++++++++++++
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: | Route | Destination  |   Gateway    |    Genmask    | Interface | Flags |
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: |   0   |   0.0.0.0    | 192.168.64.1 |    0.0.0.0    |    eth0   |   UG  |
+ci-info: |   1   | 192.168.64.0 |   0.0.0.0    | 255.255.255.0 |    eth0   |   U   |
+ci-info: +-------+--------------+--------------+---------------+-----------+-------+
+ci-info: +++++++++++++++++++Route IPv6 info+++++++++++++++++++
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: | Route | Destination | Gateway | Interface | Flags |
+ci-info: +-------+-------------+---------+-----------+-------+
+ci-info: |   0   |  fe80::/64  |    ::   |    eth0   |   U   |
+ci-info: |   2   |  multicast  |    ::   |    eth0   |   U   |
+ci-info: +-------+-------------+---------+-----------+-------+
+Connection closed by 192.168.64.1 port 52986
+Generating public/private rsa key pair.
+Your identification has been saved in /etc/ssh/ssh_host_rsa_key
+Your public key has been saved in /etc/ssh/ssh_host_rsa_key.pub
+The key fingerprint is:
+SHA256:1DjEHuF4dcyUeNtSsnQHP1DKcuXMKOLud9xJ0aEh/0E root@test-rbac-bed370aa
+The key's randomart image is:
++---[RSA 3072]----+
+|       .o..=ooo+ |
+|       +o+.oO.@E.|
+|      ..*o.=o%+*+|
+|       oo.. Bo.oo|
+|        S.   .. o|
+|        .      o |
+|         .  . o .|
+|        .  . o o |
+|         .. .    |
++----[SHA256]-----+
+Generating public/private ecdsa key pair.
+Your identification has been saved in /etc/ssh/ssh_host_ecdsa_key
+Your public key has been saved in /etc/ssh/ssh_host_ecdsa_key.pub
+The key fingerprint is:
+SHA256:apIMfoofGZNNoM5ets6HXoPLjTlmZRKI1ZuFZOipK/w root@test-rbac-bed370aa
+The key's randomart image is:
++---[ECDSA 256]---+
+|  .+o.           |
+| .ooo .          |
+|oo...+           |
+|+.o=o            |
+| +=oo   S        |
+|o.oBo+ .         |
+|.o+oXoo          |
+|oo+O*+.          |
+|o.BEo.           |
++----[SHA256]-----+
+Generating public/private ed25519 key pair.
+Your identification has been saved in /etc/ssh/ssh_host_ed25519_key
+Your public key has been saved in /etc/ssh/ssh_host_ed25519_key.pub
+The key fingerprint is:
+SHA256:K9ZskpXrpTaeBHOKlwrJIA7hUY6DRyXDkT+yazwyQHs root@test-rbac-bed370aa
+The key's randomart image is:
++--[ED25519 256]--+
+| .==.            |
+|..*o             |
+|o+.o             |
+|.++ o    .       |
+|=..o .o S        |
+|=+.E . @ o       |
+|.o=.. O B .      |
+|o =. + *o+       |
+| + ..  o=.       |
++----[SHA256]-----+
+[systemctl-shim] cloud-init modules --mode=config
+Cloud-init v. 26.1-0ubuntu2 running 'modules:config' at Wed, 17 Jun 2026 09:43:50 +0000. Up 1.87 seconds.
+[systemctl-shim] cloud-init modules --mode=final
+Cloud-init v. 26.1-0ubuntu2 running 'modules:final' at Wed, 17 Jun 2026 09:43:50 +0000. Up 2.14 seconds.
+[systemctl-shim] daemon-reload: no-op
+Enabled provisioning-token.service
+Cloud-init v. 26.1-0ubuntu2 finished at Wed, 17 Jun 2026 09:43:50 +0000. Datasource DataSourceNoCloud [seed=/var/lib/cloud/seed/nocloud].  Up 2.29 seconds
+[systemctl-shim] cloud-init complete
+[systemctl-shim] PID 1: reconcile loop active; supervising services
+[systemctl-shim] Starting provisioning-token.service (oneshot)
++ TEAM_UUID=717a83dc-071e-45d3-98eb-f3ee272a3c05
++ THIS_ENDPOINT=http://172.17.0.1:52984
++ PROVISIONING_TOKEN=eyJhbGciOiJSUzI1NiIsImtpZCI6ImlCbURBYk4teUtTSlpORVo4MDBEM0RUbTZTa0k5R1RLampwOElLN1RDOEEifQ.eyJub25jZSI6IjY5ZTRmNDJkY2NjMTc3OTY5MDUyYmI0YWZlODA4MmY0ZjVhMDUwOTQ5NzgyN2U0YzliZjgwMjBkZDczNTYxYzEiLCJzdWIiOiJhY3R4OjcxN2E4M2RjLTA3MWUtNDVkMy05OGViLWYzZWUyNzJhM2MwNTpyb2xlOnByb3Zpc2lvbmluZzpub25jZTo2OWU0ZjQyZGNjYzE3Nzk2OTA1MmJiNGFmZTgwODJmNGY1YTA1MDk0OTc4MjdlNGM5YmY4MDIwZGQ3MzU2MWMxIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6NTI5ODQiLCJhdWQiOiJhcGk6Ly9EaWdpdGFsT2NlYW4_YWN0eD03MTdhODNkYy0wNzFlLTQ1ZDMtOThlYi1mM2VlMjcyYTNjMDUiLCJpYXQiOjE3ODE2ODk0MjgsImV4cCI6MTc4MTY5MDMyOH0.eZm6UAHtws11NUULc22OEDz3mxPLAUa-cx1LaT6291aHAGxsUFfBN5XPcYfgeSx_tH66GYOs9Z-TFA-C4eOYhQqFYvlo7wF2tb8m7jK-eKj7w0_ZLI2MW937kErLgaDALyOeCg2cmX4FBK7t95-htvh83LGFs5GGxWLetatEppJCNICVL-io4knjQ2kWPKQYS4HtL2F46OSfC_3amwCD0OdUGrJ_cAM1cM2mjrDbxVZgl51yJ8dYJ1gMqTVhldPhUvIaLB4tG8XNF_7-B5aNfBeq2fZf6eBYl0aE-7pduOHlvQfJ3nOS-wlLc2mOo_ygujOQ0Oevk2XiqhORDxN6208b4uxotBNe6D8IZiFowMjwGI58HvFH3DU92VpgQpHh4Y4mDlvArfCDAOFlSBuuHBx75xVevFe4POfAfBmIN9Ll0cp8455d71qgHXKOJ37Bj4BUJSikCaekuw7ippIC9lUWv6JSYfVULNsEzgWFm4ls5gBKnQU4M0UIg_SdGRu2vYlM8qI9xGtvCy_wdgr1WuDLuGXqs7Y1yz2BL41yKtLHkYS86ysaDXo8fG4ims8NQJYShETxsWrFl16fIr-bgna3Gipx2ZZHg1ZRNEGPtX4oerd5kqfPLzIapNEiZOiu8EPXLx5EEOX6CXfLOnj2YF51kfe5P4zUiOiOVm7un3Y
++ PORT=22
+++ echo -n eyJhbGciOiJSUzI1NiIsImtpZCI6ImlCbURBYk4teUtTSlpORVo4MDBEM0RUbTZTa0k5R1RLampwOElLN1RDOEEifQ.eyJub25jZSI6IjY5ZTRmNDJkY2NjMTc3OTY5MDUyYmI0YWZlODA4MmY0ZjVhMDUwOTQ5NzgyN2U0YzliZjgwMjBkZDczNTYxYzEiLCJzdWIiOiJhY3R4OjcxN2E4M2RjLTA3MWUtNDVkMy05OGViLWYzZWUyNzJhM2MwNTpyb2xlOnByb3Zpc2lvbmluZzpub25jZTo2OWU0ZjQyZGNjYzE3Nzk2OTA1MmJiNGFmZTgwODJmNGY1YTA1MDk0OTc4MjdlNGM5YmY4MDIwZGQ3MzU2MWMxIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6NTI5ODQiLCJhdWQiOiJhcGk6Ly9EaWdpdGFsT2NlYW4_YWN0eD03MTdhODNkYy0wNzFlLTQ1ZDMtOThlYi1mM2VlMjcyYTNjMDUiLCJpYXQiOjE3ODE2ODk0MjgsImV4cCI6MTc4MTY5MDMyOH0.eZm6UAHtws11NUULc22OEDz3mxPLAUa-cx1LaT6291aHAGxsUFfBN5XPcYfgeSx_tH66GYOs9Z-TFA-C4eOYhQqFYvlo7wF2tb8m7jK-eKj7w0_ZLI2MW937kErLgaDALyOeCg2cmX4FBK7t95-htvh83LGFs5GGxWLetatEppJCNICVL-io4knjQ2kWPKQYS4HtL2F46OSfC_3amwCD0OdUGrJ_cAM1cM2mjrDbxVZgl51yJ8dYJ1gMqTVhldPhUvIaLB4tG8XNF_7-B5aNfBeq2fZf6eBYl0aE-7pduOHlvQfJ3nOS-wlLc2mOo_ygujOQ0Oevk2XiqhORDxN6208b4uxotBNe6D8IZiFowMjwGI58HvFH3DU92VpgQpHh4Y4mDlvArfCDAOFlSBuuHBx75xVevFe4POfAfBmIN9Ll0cp8455d71qgHXKOJ37Bj4BUJSikCaekuw7ippIC9lUWv6JSYfVULNsEzgWFm4ls5gBKnQU4M0UIg_SdGRu2vYlM8qI9xGtvCy_wdgr1WuDLuGXqs7Y1yz2BL41yKtLHkYS86ysaDXo8fG4ims8NQJYShETxsWrFl16fIr-bgna3Gipx2ZZHg1ZRNEGPtX4oerd5kqfPLzIapNEiZOiu8EPXLx5EEOX6CXfLOnj2YF51kfe5P4zUiOiOVm7un3Y
+++ ssh-keygen -Y sign -n prove-sshd -f /etc/ssh/ssh_host_ed25519_key
+++ jq -c --arg port 22 --raw-input --slurp '{port: ($port | fromjson), sig: .}'
+Signing data on standard input
++ SIG_JSON='{"port":22,"sig":"-----BEGIN SSH SIGNATURE-----\nU1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgaLZ8QlQj3DCtwJmA8JCrra021i\nPZYcCfE7W1rPxivo4AAAAKcHJvdmUtc3NoZAAAAAAAAAAGc2hhNTEyAAAAUwAAAAtzc2gt\nZWQyNTUxOQAAAECMd6of+Itamgy94UqOG79xz9dv++3rSXrAv1xOJE8UyCiLxYLhWX3yxO\nM8yjX7rZDrXHJObwoEZXZNrSSoG/AG\n-----END SSH SIGNATURE-----\n"}'
+++ curl -sfL -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImlCbURBYk4teUtTSlpORVo4MDBEM0RUbTZTa0k5R1RLampwOElLN1RDOEEifQ.eyJub25jZSI6IjY5ZTRmNDJkY2NjMTc3OTY5MDUyYmI0YWZlODA4MmY0ZjVhMDUwOTQ5NzgyN2U0YzliZjgwMjBkZDczNTYxYzEiLCJzdWIiOiJhY3R4OjcxN2E4M2RjLTA3MWUtNDVkMy05OGViLWYzZWUyNzJhM2MwNTpyb2xlOnByb3Zpc2lvbmluZzpub25jZTo2OWU0ZjQyZGNjYzE3Nzk2OTA1MmJiNGFmZTgwODJmNGY1YTA1MDk0OTc4MjdlNGM5YmY4MDIwZGQ3MzU2MWMxIiwiaXNzIjoiaHR0cDovLzE3Mi4xNy4wLjE6NTI5ODQiLCJhdWQiOiJhcGk6Ly9EaWdpdGFsT2NlYW4_YWN0eD03MTdhODNkYy0wNzFlLTQ1ZDMtOThlYi1mM2VlMjcyYTNjMDUiLCJpYXQiOjE3ODE2ODk0MjgsImV4cCI6MTc4MTY5MDMyOH0.eZm6UAHtws11NUULc22OEDz3mxPLAUa-cx1LaT6291aHAGxsUFfBN5XPcYfgeSx_tH66GYOs9Z-TFA-C4eOYhQqFYvlo7wF2tb8m7jK-eKj7w0_ZLI2MW937kErLgaDALyOeCg2cmX4FBK7t95-htvh83LGFs5GGxWLetatEppJCNICVL-io4knjQ2kWPKQYS4HtL2F46OSfC_3amwCD0OdUGrJ_cAM1cM2mjrDbxVZgl51yJ8dYJ1gMqTVhldPhUvIaLB4tG8XNF_7-B5aNfBeq2fZf6eBYl0aE-7pduOHlvQfJ3nOS-wlLc2mOo_ygujOQ0Oevk2XiqhORDxN6208b4uxotBNe6D8IZiFowMjwGI58HvFH3DU92VpgQpHh4Y4mDlvArfCDAOFlSBuuHBx75xVevFe4POfAfBmIN9Ll0cp8455d71qgHXKOJ37Bj4BUJSikCaekuw7ippIC9lUWv6JSYfVULNsEzgWFm4ls5gBKnQU4M0UIg_SdGRu2vYlM8qI9xGtvCy_wdgr1WuDLuGXqs7Y1yz2BL41yKtLHkYS86ysaDXo8fG4ims8NQJYShETxsWrFl16fIr-bgna3Gipx2ZZHg1ZRNEGPtX4oerd5kqfPLzIapNEiZOiu8EPXLx5EEOX6CXfLOnj2YF51kfe5P4zUiOiOVm7un3Y' -d '{"port":22,"sig":"-----BEGIN SSH SIGNATURE-----\nU1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgaLZ8QlQj3DCtwJmA8JCrra021i\nPZYcCfE7W1rPxivo4AAAAKcHJvdmUtc3NoZAAAAAAAAAAGc2hhNTEyAAAAUwAAAAtzc2gt\nZWQyNTUxOQAAAECMd6of+Itamgy94UqOG79xz9dv++3rSXrAv1xOJE8UyCiLxYLhWX3yxO\nM8yjX7rZDrXHJObwoEZXZNrSSoG/AG\n-----END SSH SIGNATURE-----\n"}' http://172.17.0.1:52984/v1/oidc/prove
+++ jq -r .token
++ TOKEN=
+[systemctl-shim] provisioning-token.service: oneshot finished (rc=28)

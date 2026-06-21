@@ -1,0 +1,14 @@
+{
+  "name": "@publicdomainrelay/hono-factory-atproto-relay-xrpc",
+  "version": "0.0.0",
+  "license": "Unlicense",
+  "exports": "./mod.ts",
+  "imports": {
+    "@publicdomainrelay/atproto-relay-abc": "jsr:@publicdomainrelay/atproto-relay-abc@^0",
+    "@publicdomainrelay/atproto-relay-common": "jsr:@publicdomainrelay/atproto-relay-common@^0",
+    "@publicdomainrelay/atproto-relay-xrpc": "jsr:@publicdomainrelay/atproto-relay-xrpc@^0",
+    "@publicdomainrelay/hostname-helpers": "jsr:@publicdomainrelay/hostname-helpers@^0.1",
+    "@publicdomainrelay/hono-error-middleware": "jsr:@publicdomainrelay/hono-error-middleware@^0.1",
+    "@publicdomainrelay/logger": "jsr:@publicdomainrelay/logger@^0"
+  }
+}

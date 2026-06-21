@@ -1,0 +1,63 @@
+[0m[38;5;12mWatcher[0m Process started.
+{"event":"bidder_did_plc_registering","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo"}
+{"event":"bidder_did_plc_registered","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo"}
+{"ts":"2026-06-17T22:42:28.097Z","level":"info","message":"ws_open","prefix":"subscriber","component":"bidder","host":"xrpc.fedproxy.com"}
+{"event":"bidder_relay_registered","subdomain":"did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg","proxyRef":"did:web:did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com"}
+{"event":"bidder_oidc_issuer_mounted","issuerUrl":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com"}
+{"event":"bidder_relay_connecting","dispatcherHost":"xrpc.fedproxy.com"}
+{"event":"bidder_offering_created","uri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.publicdomainrelay.temp.market.offering/3mojf553vus2n"}
+{"event":"registered_with_registry","endpoint":"did:web:market-registry-0001--johnandersen777-bsky-social.fedproxy.com"}
+{"event":"discovery_updater_start","intervalMs":60000}
+Bidder DID: did:plc:zr6pmth6blgusxkgjmy5g5bo
+Relay subdomain: did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg
+Bidder proxyRef: did:web:did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com
+{"label":"bidder","severity":"info","message":"submitRfp received","rfpUri":"at://did:plc:opxkx3s2fs24f3rexuzimcuy/com.publicdomainrelay.temp.market.rfp/2tebploierm22","rfpCid":"bafyreicdfyiz22sr6wrzgzgx644ezo4flfdpqqtte4rnobemobehzliinu"}
+{"label":"bidder","severity":"info","message":"bidder received RFP","rfpUri":"at://did:plc:opxkx3s2fs24f3rexuzimcuy/com.publicdomainrelay.temp.market.rfp/2tebploierm22","rfpCid":"bafyreicdfyiz22sr6wrzgzgx644ezo4flfdpqqtte4rnobemobehzliinu","issuerDid":"did:plc:opxkx3s2fs24f3rexuzimcuy"}
+{"label":"bidder","severity":"info","message":"bidder created bid config","configUri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.publicdomainrelay.temp.compute.config.wif.simple/3mojf5dyv622n"}
+{"label":"bidder","severity":"info","message":"bidder created bid","bidUri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.publicdomainrelay.temp.market.bid/3mojf5dz5xc2n","bidCid":"bafyreigpwjvtw6ex5rzyrhgzzaulz2lpiv2dot7rnsinlk35xyabiqoac4","payloadUri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.publicdomainrelay.temp.market.bids.free/3mojf5dz22c2n"}
+{"label":"bidder","severity":"info","message":"bidder submitted bid to requester","status":200,"ok":true}
+{"label":"bidder","severity":"info","message":"submitAccept received","acceptUri":"at://did:plc:opxkx3s2fs24f3rexuzimcuy/com.publicdomainrelay.temp.market.accept/2tebplrlram22","acceptCid":"bafyreibmqyq4z5hjmo7twbcpikjoxqdrr3lrjb4nopavpdfogtui6uivry"}
+{"label":"bidder","severity":"info","message":"bidder received accept","acceptUri":"at://did:plc:opxkx3s2fs24f3rexuzimcuy/com.publicdomainrelay.temp.market.accept/2tebplrlram22","acceptCid":"bafyreibmqyq4z5hjmo7twbcpikjoxqdrr3lrjb4nopavpdfogtui6uivry","issuerDid":"did:plc:opxkx3s2fs24f3rexuzimcuy"}
+{"label":"bidder","severity":"info","message":"bidder created receipt","receiptUri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.publicdomainrelay.temp.market.receipt/3mojf5jjva22n","receiptCid":"bafyreih5yoe4lkmfruxif5xmv2pmaljcbvjxrhsunlnx3qtrhnwdq6sevi","acceptAuthor":"did:plc:opxkx3s2fs24f3rexuzimcuy","activeCount":1}
+{"label":"bidder","severity":"info","message":"provision rbac write","repo":"did:plc:zr6pmth6blgusxkgjmy5g5bo","actx":"zr6pmth6blgusxkgjmy5g5bo","requesterPlc":"opxkx3s2fs24f3rexuzimcuy","role":"test-0001","service":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com"}
+{"label":"bidder","severity":"info","message":"creating rbac record","nsid":"com.fedproxy.rbac","roleName":"ex-zr6pmth6blgusxkgjmy5g5bo-opxkx3s2fs24f3rexuzimcuy-test-0001"}
+{"label":"bidder","severity":"info","message":"rbac record created","nsid":"com.fedproxy.rbac","uri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.fedproxy.rbac/3mojf5kd6sc2n"}
+{"label":"bidder","severity":"info","message":"provision rbac written","uri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.fedproxy.rbac/3mojf5kd6sc2n"}
+{"label":"bidder","severity":"info","message":"provision token config","teamUuid":"zr6pmth6blgusxkgjmy5g5bo","issuerUrl":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","containerName":"pdr-opxkx3s2fs24f3rexuzimcuy-2tebploibwy22-f277d3a5"}
+{"label":"bidder","severity":"info","message":"provisioning container","containerName":"pdr-opxkx3s2fs24f3rexuzimcuy-2tebploibwy22-f277d3a5","image":"container-runner-ubuntu:latest"}
+==> Starting container (ubuntu, tag=container-runner-ubuntu:latest)
+==> Container IP: 192.168.64.37
+==> Container gateway: 192.168.64.1
+==> Waiting for SSH...
+==> SSH ready! ssh agent@192.168.64.37
+    Container: pdr-opxkx3s2fs24f3rexuzimcuy-2tebploibwy22-f277d3a5
+{"label":"bidder","severity":"info","message":"bidder provisioned compute","providerId":"pdr-opxkx3s2fs24f3rexuzimcuy-2tebploibwy22-f277d3a5"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"POST","path":"/v1/oidc/prove"}
+{"label":"bidder","severity":"info","message":"prove start","actx":"zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:role:provisioning:nonce:d5b7f8ea658d7717bcae8cffdbbe383b27a555132539e214cc6edd0e54efbb51","port":22}
+{"label":"bidder","severity":"info","message":"prove issued","actx":"zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001","dropletId":"pdr-opxkx3s2fs24f3rexuzimcuy-2tebploibwy22-f277d3a5"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"POST","path":"/v1/oidc/issue"}
+{"label":"bidder","severity":"info","message":"rbac gate","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","api":"DigitalOcean","service":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","scope":"droplets.wid","path":"/v1/oidc/issue","method":"POST","rawAud":"api://DigitalOcean?actx=zr6pmth6blgusxkgjmy5g5bo"}
+{"label":"bidder","severity":"info","message":"rbac gate resolved pds","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","pdsURL":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com"}
+{"label":"bidder","severity":"info","message":"rbac lookup start","pdsURL":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo","wantService":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","wantScope":"droplets.wid"}
+{"label":"bidder","severity":"info","message":"rbac record scanned","uri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.fedproxy.rbac/3mojf5kd6sc2n","matched":true,"protects":["https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com|droplets.wid"]}
+{"label":"bidder","severity":"info","message":"rbac matched","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo","total":1,"roles":["ex-zr6pmth6blgusxkgjmy5g5bo-opxkx3s2fs24f3rexuzimcuy-test-0001"]}
+{"label":"bidder","severity":"info","message":"rbac gate issuers","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","issuers":[]}
+{"label":"bidder","severity":"info","message":"rbac gate token validated","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001"}
+{"label":"bidder","severity":"info","message":"rbac gate authorized","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001","path":"/v1/oidc/issue","method":"POST"}
+{"label":"bidder","severity":"info","message":"issue token","actx":"zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:get-ttyd-password-test-0001"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/openid-configuration"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/jwks"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/openid-configuration"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/jwks"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"POST","path":"/v1/oidc/issue"}
+{"label":"bidder","severity":"info","message":"rbac gate","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","api":"DigitalOcean","service":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","scope":"droplets.wid","path":"/v1/oidc/issue","method":"POST","rawAud":"api://DigitalOcean?actx=zr6pmth6blgusxkgjmy5g5bo"}
+{"label":"bidder","severity":"info","message":"rbac gate resolved pds","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","pdsURL":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com"}
+{"label":"bidder","severity":"info","message":"rbac lookup start","pdsURL":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo","wantService":"https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com","wantScope":"droplets.wid"}
+{"label":"bidder","severity":"info","message":"rbac record scanned","uri":"at://did:plc:zr6pmth6blgusxkgjmy5g5bo/com.fedproxy.rbac/3mojf5kd6sc2n","matched":true,"protects":["https://did-key-zq3shyh7ncpvkm7hz8xln6ztuvzxo6usgvusnpqbqbahyqodg.xrpc.fedproxy.com|droplets.wid"]}
+{"label":"bidder","severity":"info","message":"rbac matched","did":"did:plc:zr6pmth6blgusxkgjmy5g5bo","total":1,"roles":["ex-zr6pmth6blgusxkgjmy5g5bo-opxkx3s2fs24f3rexuzimcuy-test-0001"]}
+{"label":"bidder","severity":"info","message":"rbac gate issuers","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","issuers":[]}
+{"label":"bidder","severity":"info","message":"rbac gate token validated","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001"}
+{"label":"bidder","severity":"info","message":"rbac gate authorized","actx":"did:plc:zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001","path":"/v1/oidc/issue","method":"POST"}
+{"label":"bidder","severity":"info","message":"issue token","actx":"zr6pmth6blgusxkgjmy5g5bo","sub":"actx:zr6pmth6blgusxkgjmy5g5bo:plc:opxkx3s2fs24f3rexuzimcuy:role:test-0001"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/openid-configuration"}
+{"label":"bidder","severity":"info","message":"oidc request","method":"GET","path":"/.well-known/jwks"}
