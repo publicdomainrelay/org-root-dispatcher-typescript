@@ -110,12 +110,19 @@
           "jsr:@publicdomainrelay/cli-args-env@0",
           "jsr:@publicdomainrelay/event-bus@0",
           "jsr:@publicdomainrelay/hono-factory-static-files-fs@0",
-          "jsr:@publicdomainrelay/logger@0"
+          "jsr:@publicdomainrelay/logger@0",
+          "jsr:@publicdomainrelay/serve@0"
         ]
       },
       "jsr:@publicdomainrelay/hostname-helpers@0.1.0": {},
       "jsr:@publicdomainrelay/http-error@0.1.0": {},
-      "jsr:@publicdomainrelay/logger@0.2.0": {}
+      "jsr:@publicdomainrelay/logger@0.2.0": {},
+      "jsr:@publicdomainrelay/serve@0.0.0": {
+        "dependencies": [
+          "jsr:@hono/hono@4",
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      }
     }
   }
 }

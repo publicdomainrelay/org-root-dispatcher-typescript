@@ -539,3 +539,28 @@ concept = fresh set of layers.
 Import through bare specifier in `imports` (`@publicdomainrelay/...`,
 `@hono/hono`), not inlined `jsr:`/`npm:` URLs -- versions stay centralized in
 `deno.json`.
+
+## CLI patterns (ALWAYS)
+
+- `createLogger({ serviceName })` — JSON structured logger for every CLI
+- `createServe({ logger, tcp?, unix?, relays? })` — composable serve handle,
+  `beginServe()` resolves after relays connect + onConnected hooks fire,
+  `shutdown()` via SIGINT/SIGTERM in CLI only
+- Provider array: each provider owns its relay + serve + OIDC issuer
+  (OIDC mounted on provider's serve in `serve.onConnected`)
+- `cliCreateXrpcRelay()` — sync constructor, defers WS connect to
+  `onServe(fetch)`, `proxyRef` server-assigned → lazy-read everywhere
+- `createATProto(...)` — single `atproto` instance passed to providers + bidder
+- `createMarketBidder({ providers, ... })` — owns `activeContracts` +
+  provider lifecycle (setup/teardown/merge callbacks)
+- Signal handlers ONLY in CLI (`Deno.addSignalListener`), never in lib
+
+## CLI patterns (NEVER)
+
+- Raw `Deno.serve()` in CLI or lib — use `createServe()`
+- Precompute/eager-read `proxyRef` — always lazy via `() => relay.proxyRef`
+- I/O in lib (`Deno.serve`, `Deno.addSignalListener`, `WebSocket` connect,
+  `Deno.env.get`) — I/O only in impl layer or CLI
+- OIDC bolted on bidder app post-hoc — each provider mounts own OIDC on
+  its own serve via `serve.onConnected`
+- Single-provider if/else branch — use provider array + hooks pattern
