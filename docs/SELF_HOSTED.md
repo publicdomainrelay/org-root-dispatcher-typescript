@@ -153,7 +153,7 @@ REPO_PRIVATE_KEY_HEX="<64-char-hex>" \
 | `--compute-provider` | `COMPUTE_PROVIDER` | -- | `local` or `digitalocean` |
 | `--compute-provider-token` | `COMPUTE_PROVIDER_TOKEN` | -- | Auth token for provider API |
 | `--compute-provider-base-url` | `COMPUTE_PROVIDER_BASE_URL` | -- | Provider API base URL |
-| `--registry-endpoint` | `REGISTRY_ENDPOINT` | -- | Market registry endpoint |
+| `--registry-endpoint` | `REGISTRY_ENDPOINT` | `https://reg.market.fedfork.com` | Market registry endpoint (atproto-relay; requestCrawl) |
 | `--heartbeat-interval-ms` | `HEARTBEAT_INTERVAL_MS` | `60000` | Discovery heartbeat |
 
 ## Using real DigitalOcean backend

@@ -69,6 +69,7 @@ async function runTests(ws: WorkspaceTests): Promise<TestResult> {
       "--allow-read",
       "--allow-write",
       "--allow-run",
+      "--allow-sys",
       "--unstable-kv",
       "--unstable-worker-options",
       "--no-check",
