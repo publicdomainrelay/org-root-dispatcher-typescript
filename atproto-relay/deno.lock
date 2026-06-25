@@ -90,6 +90,21 @@
         ]
       },
       "jsr:@publicdomainrelay/event-bus@0.1.0": {},
+      "jsr:@publicdomainrelay/firehose-watcher-abc@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/firehose-watcher-jetstream@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/firehose-watcher-abc@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/firehose-watcher-subscriberepos@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/firehose-watcher-abc@0"
+        ]
+      },
       "jsr:@publicdomainrelay/hono-error-middleware@0.1.0": {
         "dependencies": [
           "jsr:@hono/hono@4",

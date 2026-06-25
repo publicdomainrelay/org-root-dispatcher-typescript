@@ -7,6 +7,40 @@ this file = **org root**.
 Always run `./scripts/find-all-package.ts | yq -P` on session start to see where
 everything lives.
 
+## RFP flow is the spine — NEVER bypass it
+
+This entire project exists to provision compute through the **RFP / market
+flow**. A requester posts a `compute.vm` record + a signed `market.rfp`; bidders
+bid; the winner provisions a guest **via cloud-init `user_data`**
+(`buildDefaultUserData` in `cloud-init-common`); the requester reaches the guest
+**only through the relay** (ssh `ProxyCommand` over the websocket tunnel). The
+relay is the registry. Nothing talks to a guest except through this path.
+
+**NEVER — non-negotiable, breaks the whole point of the project:**
+
+- Provision a container/VM by hand in code OR tests (`container run`,
+  `docker run`, `container exec ... apt-get install`, mounting a binary,
+  `ssh-keygen` + manual `authorized_keys`). Guests are born from cloud-init
+  `user_data` produced by the RFP flow, never hand-assembled.
+- Cross-compile/mount a guest agent to skip cloud-init. The agent (sshd,
+  websocat, fedproxy-client, tunnel subscriber, …) is installed BY the
+  cloud-init `user_data` the bidder applies.
+- Write a "real ssh / real guest" e2e that stands up its own container instead
+  of driving `runComputeContract(...)`. If a test needs a live guest, it drives
+  the requester (`runComputeContract`) against a real local bidder running a
+  container-mode compute provider (see
+  `atproto-market/test/bidder_container_integration_test.ts` for the canonical
+  harness: local dispatcher + fake PLC + bidder + requester, fetch patched so
+  `https://*.localhost` → local dispatcher). Provisioning ALWAYS goes
+  requester → RFP → bid → accept → cloud-init.
+- Add a second SSH/tunnel transport that the RFP cloud-init does not deploy. New
+  guest-side transport = teach `buildDefaultUserData` (or a sibling user_data
+  builder) to install it, so the RFP flow remains the only way a guest comes up.
+
+**Pre-flight before any provisioning / guest / ssh / tunnel code or test:** Does
+this go through `runComputeContract` + RFP records + cloud-init? If it calls
+`container run`/`docker run`/`exec` directly, STOP — it is wrong.
+
 ## Bash CWD
 
 Bash tool persists CWD across calls. `cd` in one call = CWD for next call.
@@ -564,3 +598,7 @@ Import through bare specifier in `imports` (`@publicdomainrelay/...`,
 - OIDC bolted on bidder app post-hoc — each provider mounts own OIDC on
   its own serve via `serve.onConnected`
 - Single-provider if/else branch — use provider array + hooks pattern
+- Port-sniffing (`Deno.listen({port:0})`, read port, close, `Deno.serve({port})`
+  on same port) — TOCTOU race. Pass `port: 0` to `Deno.serve`, read bound port
+  from `onListen` callback via `Promise.withResolvers`. Same for any
+  listen-close-rebind pattern.
