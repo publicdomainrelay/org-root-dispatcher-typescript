@@ -147,18 +147,6 @@ const UNITS: UnitDef[] = [
     wants: "network-online.target",
   },
   {
-    name: "spindle.service",
-    description: "fedcicd spindle (reference repo, gha.spindle.tangled.fedcicd.com)",
-    workingDir: `${REF_ROOT}/src/typescript/spindle`,
-    execStart: `${DENO} run --allow-all main.ts`,
-    after: "network-online.target",
-    wants: "network-online.target",
-    envFiles: [
-      `${REF_ROOT}/src/typescript/spindle/spindle.env`,
-      `${REF_ROOT}/src/typescript/spindle/spindle.env.secrets`,
-    ],
-  },
-  {
     name: "git-pull.service",
     description: "git pull org-root + rebuild compute-spa",
     workingDir: ORG_ROOT,
@@ -195,22 +183,6 @@ const ENV_FILES: EnvDef[] = [
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
       ["OFFERING_REFRESH_SEC", "300"],
       ["RFP_FIREHOSE_MODE", "off"],
-    ],
-  },
-  {
-    path: "src/typescript/spindle/spindle.env",
-    root: "ref",
-    vars: [
-      ["COMPUTE_PROVIDER", "market.rfp"],
-      ["BID_WINDOW_MS", "3000"],
-      ["SPINDLE_HOSTNAME", "gha.spindle.tangled.fedcicd.com"],
-      ["PORT", "7777"],
-      ["ATPROTO_HANDLE", "CHANGE_ME"],
-      ["ATPROTO_USERNAME", "CHANGE_ME"],
-      ["ATPROTO_DID", "CHANGE_ME"],
-      ["ATPROTO_PDS", "https://morel.us-east.host.bsky.network"],
-      ["ATPROTO_PASSWORD", "CHANGE_ME"],
-      ["ATPROTO_APP_PASSWORD", "CHANGE_ME"],
     ],
   },
 ];
