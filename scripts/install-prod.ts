@@ -183,7 +183,7 @@ const ENV_FILES: EnvDef[] = [
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
       ["OFFERING_REFRESH_SEC", "300"],
       ["RFP_FIREHOSE_MODE", "subscriberepos"],
-      ["RFP_FIREHOSE_URL", "wss://bsky.network"],
+      ["RFP_FIREHOSE_URL", "wss://bsky.network,wss://relay.mini-cloud-0002.chadig.com"],
     ],
   },
 ];
