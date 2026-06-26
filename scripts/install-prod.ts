@@ -169,7 +169,7 @@ const ENV_FILES: EnvDef[] = [
     path: "atproto-relay/hono-atproto-relay/atproto-relay.env",
     root: "org",
     vars: [
-      ["HOSTNAME", "reg.market.fedfork.com"],
+      ["HOSTNAME", "relay.mini-cloud-0002.chadig.com"],
       ["PORT", "2584"],
     ],
   },
@@ -178,11 +178,12 @@ const ENV_FILES: EnvDef[] = [
     root: "org",
     vars: [
       ["RELAY_DISPATCHER_HOST", "xrpc.fedproxy.com"],
-      ["REGISTRY_ENDPOINT", "https://reg.market.fedfork.com"],
+      ["REGISTRY_ENDPOINT", "https://relay.mini-cloud-0002.chadig.com"],
       ["PLC_DIRECTORY_URL", "https://plc.directory"],
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
       ["OFFERING_REFRESH_SEC", "300"],
-      ["RFP_FIREHOSE_MODE", "off"],
+      ["RFP_FIREHOSE_MODE", "subscriberepos"],
+      ["RFP_FIREHOSE_URL", "wss://bsky.network"],
     ],
   },
 ];
@@ -428,6 +429,20 @@ echo "Caddy now has dns.providers.cloudflare"
   );
 }
 
+// ── caddy user + runtime dirs ────────────────────────────────────────────────
+
+/** The caddy deb normally creates the caddy user, but broken dpkg can skip it. */
+async function ensureCaddyUser(): Promise<void> {
+  try {
+    await capture("id", "caddy");
+  } catch {
+    await run("sudo", "useradd", "-r", "-d", "/var/lib/caddy", "-s", "/usr/sbin/nologin", "caddy");
+    console.log("  created caddy user");
+  }
+  await run("sudo", "mkdir", "-p", "/opt/caddy");
+  await run("sudo", "chown", "-R", "caddy:caddy", "/opt/caddy");
+}
+
 // ── Caddyfile ────────────────────────────────────────────────────────────────
 
 const CADDYFILE_CONTENT = `# Caddyfile — managed by scripts/install-prod.ts
@@ -435,6 +450,11 @@ const CADDYFILE_CONTENT = `# Caddyfile — managed by scripts/install-prod.ts
 
 {
 \tadmin unix//opt/caddy/caddy-admin.sock
+}
+
+# --- atproto-relay ---
+https://relay.mini-cloud-0002.chadig.com {
+\treverse_proxy http://127.0.0.1:2584
 }
 
 # --- compute provider OIDC issuer ---
@@ -576,7 +596,7 @@ async function writeEnvFiles(): Promise<void> {
 async function ensureHostsEntries(): Promise<void> {
   const hostsFile = "/etc/hosts";
   const entries: [string, string][] = [
-    ["127.0.0.1", "reg.market.fedfork.com"],
+    ["127.0.0.1", "relay.mini-cloud-0002.chadig.com"],
   ];
   let contents = await Deno.readTextFile(hostsFile);
   let changed = false;
@@ -734,6 +754,7 @@ async function localInstall(): Promise<void> {
   await installGitPullScript();
   await installUnits();
   await installCaddyfile();
+  await ensureCaddyUser();
   await installCaddyUnit();
   await run("sudo", "systemctl", "daemon-reload");
   await tryRun("sudo", "systemctl", "enable", "--now", "caddy");
