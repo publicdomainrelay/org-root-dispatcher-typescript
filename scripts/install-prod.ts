@@ -351,7 +351,7 @@ function writeServiceUnit(def: UnitDef): string {
   lines.push(`Environment=HOME=${HOME}`);
   lines.push(`Environment=PATH=${PATH_ENV}`);
   for (const f of def.envFiles ?? []) {
-    lines.push(`EnvironmentFile=${f}`);
+    lines.push(`EnvironmentFile=-${f}`);
   }
   for (const [k, v] of def.extraEnv ?? []) {
     lines.push(`Environment=${k}=${v}`);
