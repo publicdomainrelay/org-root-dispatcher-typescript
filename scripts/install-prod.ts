@@ -467,6 +467,29 @@ async function ensureVmImages(): Promise<void> {
   if (!crId) {
     console.log(`  ${crTag} will be built on first provisioning (cold start OK)`);
   }
+
+  // Pre-create cache dir so the compute provider doesn't fail on first
+  // provisioning with a missing directory.
+  const cacheDir = `${HOME}/.cache/pdr-local`;
+  await Deno.mkdir(cacheDir, { recursive: true });
+  console.log(`  cache dir ${cacheDir} ready`);
+
+  // Pre-build the VM guest image (squashfs, kernel, initrd) so the first
+  // RFP provision doesn't wait for a full OS build. qemu-standalone.ts
+  // caches artifacts in /root/.cache/simple-qemu inside the container.
+  const buildSentinel = `${cacheDir}/.build-complete`;
+  if (await exists(buildSentinel)) {
+    console.log("  VM guest image cache already warm");
+  } else {
+    console.log("  pre-building VM guest image (this takes a few minutes) …");
+    await run("docker", "run", "--rm", "--privileged",
+      "-v", `${cacheDir}:/root/.cache/simple-qemu`,
+      QEMU_RUNNER_IMAGE,
+      "build", "--distro=ubuntu",
+    );
+    await Deno.writeTextFile(buildSentinel, "");
+    console.log("  VM guest image cache warm");
+  }
 }
 
 // ── caddy user + runtime dirs ────────────────────────────────────────────────
