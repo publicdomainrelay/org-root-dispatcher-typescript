@@ -114,7 +114,7 @@ const PATH_ENV =
 const UNITS: UnitDef[] = [
   {
     name: "atproto-relay.service",
-    description: "atproto-relay (reg.market.fedfork.com)",
+    description: "atproto-relay (relay.mini-cloud-0002.chadig.com)",
     workingDir: `${ORG_ROOT}/atproto-relay/hono-atproto-relay`,
     execStart: `${DENO} run --allow-all mod.ts`,
     after: "network-online.target",
