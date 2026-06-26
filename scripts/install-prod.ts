@@ -1,0 +1,738 @@
+#!/usr/bin/env -S deno run --allow-all
+// install-prod.ts — deploy + install all prod services for the publicdomainrelay org-root.
+//
+// Two modes:
+//   --local (default on target machine): clone/update repos, install Caddyfile,
+//     write systemd units, ensure .env.secrets, enable services, start timers.
+//   --deploy: SCP self + Caddyfile to REMOTE_HOST, SSH in, run with --local.
+//
+// Idempotent: re-running updates repos, refreshes unit files, restarts services.
+// Prompts interactively for missing secrets (CHANGE_ME stubs).
+//
+//   deno run --allow-all scripts/install-prod.ts          # local install
+//   deno run --allow-all scripts/install-prod.ts --deploy  # deploy to remote
+
+import { Secp256k1Keypair } from "npm:@atproto/crypto";
+
+// ── constants ────────────────────────────────────────────────────────────────
+const HOME = Deno.env.get("HOME")!;
+const ORG_ROOT = `${HOME}/prod-org-root`;
+const ORG_REPO_URL =
+  "https://github.com/publicdomainrelay/org-root-dispatcher-typescript";
+const REF_ROOT =
+  `${HOME}/prod-compute-contract-reference-implementation-poc`;
+const REF_REPO_URL =
+  "https://github.com/publicdomainrelay/compute-contract-reference-implementation-poc";
+const DENO = `${HOME}/.deno/bin/deno`;
+const SYSTEMD_DIR = "/etc/systemd/system";
+const CADDY_TARGET = "/etc/caddy/Caddyfile";
+const CADDY_DEPLOY_DIR = "/var/www/graph-viewer-0001-fedfork";
+const REMOTE_HOST = "mini-cloud-0002.chadig.com";
+const REMOTE_PORT = "22";
+const REMOTE_USER = "johnandersen777";
+const SPA_SOURCE_REL = ".reference/rbac/src/typescript/compute-spa";
+
+const secretWarnings: string[] = [];
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+async function run(cmd: string, ...args: string[]): Promise<void> {
+  const c = new Deno.Command(cmd, {
+    args,
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const { code } = await c.output();
+  if (code !== 0) throw new Error(`${cmd} ${args.join(" ")} exited ${code}`);
+}
+
+async function capture(cmd: string, ...args: string[]): Promise<string> {
+  const { stdout } = await new Deno.Command(cmd, { args, stderr: "null" })
+    .output();
+  return new TextDecoder().decode(stdout).trim();
+}
+
+async function exists(p: string): Promise<boolean> {
+  try {
+    await Deno.stat(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function generateKeyHex(): Promise<string> {
+  const kp = await Secp256k1Keypair.create({ exportable: true });
+  return Array.from(await kp.export())
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function parseEnv(text: string): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const line of text.split("\n")) {
+    const kv = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (kv) m.set(kv[1], kv[2]);
+  }
+  return m;
+}
+
+/** Read a single line from stdin (prompt). */
+async function promptLine(msg: string): Promise<string> {
+  await Deno.stdout.write(new TextEncoder().encode(msg));
+  const buf = new Uint8Array(4096);
+  const n = await Deno.stdin.read(buf);
+  if (n === null) return "";
+  return new TextDecoder().decode(buf.subarray(0, n)).trim();
+}
+
+// ── unit / env definitions ──────────────────────────────────────────────────
+
+interface UnitDef {
+  name: string;
+  description: string;
+  workingDir: string;
+  execStart: string;
+  after?: string;
+  wants?: string;
+  envFiles?: string[];
+  extraEnv?: [string, string][];
+  type?: string; // default "simple"
+  restart?: string; // default "on-failure"
+}
+
+interface EnvDef {
+  path: string; // relative to a root (ORG_ROOT or REF_ROOT)
+  vars: [string, string][]; // [KEY, value-or-CHANGE_ME]
+  root: "org" | "ref";
+}
+
+const PATH_ENV =
+  `${HOME}/.deno/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`;
+
+const UNITS: UnitDef[] = [
+  {
+    name: "atproto-relay.service",
+    description: "atproto-relay (reg.market.fedfork.com)",
+    workingDir: `${ORG_ROOT}/atproto-relay/hono-atproto-relay`,
+    execStart: `${DENO} run --allow-all mod.ts`,
+    after: "network-online.target",
+    wants: "network-online.target",
+    envFiles: [
+      `${ORG_ROOT}/atproto-relay/hono-atproto-relay/atproto-relay.env`,
+      `${ORG_ROOT}/atproto-relay/hono-atproto-relay/atproto-relay.env.secrets`,
+    ],
+  },
+  {
+    name: "bidder.service",
+    description: "fedfork bidder (org-root, local VM mode)",
+    workingDir: `${ORG_ROOT}/atproto-market/hono-bidder`,
+    execStart:
+      `${DENO} run --allow-all mod.ts --compute-provider-local --compute-provider-local-container-mode=vm`,
+    after: "network-online.target",
+    wants: "network-online.target",
+    envFiles: [
+      `${ORG_ROOT}/atproto-market/hono-bidder/bidder.env`,
+      `${ORG_ROOT}/atproto-market/hono-bidder/bidder.env.secrets`,
+    ],
+  },
+  {
+    name: "hono-jsr.service",
+    description: "hono-jsr package registry (jsr.publicdomainrelay.com)",
+    workingDir: `${ORG_ROOT}/hono-jsr/hono-package-registry`,
+    execStart:
+      `${DENO} run --allow-all main.ts --port=8888 --store=git --git-url=${ORG_REPO_URL}`,
+    after: "network-online.target",
+    wants: "network-online.target",
+  },
+  {
+    name: "spindle.service",
+    description: "fedcicd spindle (reference repo, gha.spindle.tangled.fedcicd.com)",
+    workingDir: `${REF_ROOT}/src/typescript/spindle`,
+    execStart: `${DENO} run --allow-all main.ts`,
+    after: "network-online.target",
+    wants: "network-online.target",
+    envFiles: [
+      `${REF_ROOT}/src/typescript/spindle/spindle.env`,
+      `${REF_ROOT}/src/typescript/spindle/spindle.env.secrets`,
+    ],
+  },
+  {
+    name: "git-pull.service",
+    description: "git pull org-root + rebuild compute-spa",
+    workingDir: ORG_ROOT,
+    execStart: `${HOME}/bin/git-pull-and-rebuild.sh`,
+    after: "network-online.target",
+    wants: "network-online.target",
+    type: "oneshot",
+  },
+  {
+    name: "git-pull.timer",
+    description: "trigger git-pull every 5 minutes",
+    workingDir: ORG_ROOT,
+    execStart: "", // timer-only unit, no ExecStart
+    type: "timer",
+  },
+];
+
+const ENV_FILES: EnvDef[] = [
+  {
+    path: "atproto-relay/hono-atproto-relay/atproto-relay.env",
+    root: "org",
+    vars: [
+      ["HOSTNAME", "reg.market.fedfork.com"],
+      ["PORT", "2584"],
+    ],
+  },
+  {
+    path: "atproto-market/hono-bidder/bidder.env",
+    root: "org",
+    vars: [
+      ["RELAY_DISPATCHER_HOST", "xrpc.fedproxy.com"],
+      ["REGISTRY_ENDPOINT", "https://reg.market.fedfork.com"],
+      ["PLC_DIRECTORY_URL", "https://plc.directory"],
+      ["ATP_PDS_URL", "https://bsky.social"],
+      ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
+      ["OFFERING_REFRESH_SEC", "300"],
+      ["RFP_FIREHOSE_MODE", "off"],
+      ["ATP_HANDLE", "CHANGE_ME"],
+      ["ATP_PASSWORD", "CHANGE_ME"],
+    ],
+  },
+  {
+    path: "src/typescript/spindle/spindle.env",
+    root: "ref",
+    vars: [
+      ["COMPUTE_PROVIDER", "market.rfp"],
+      ["BID_WINDOW_MS", "3000"],
+      ["SPINDLE_HOSTNAME", "gha.spindle.tangled.fedcicd.com"],
+      ["PORT", "7777"],
+      ["ATPROTO_HANDLE", "CHANGE_ME"],
+      ["ATPROTO_USERNAME", "CHANGE_ME"],
+      ["ATPROTO_DID", "CHANGE_ME"],
+      ["ATPROTO_PDS", "https://morel.us-east.host.bsky.network"],
+      ["ATPROTO_PASSWORD", "CHANGE_ME"],
+      ["ATPROTO_APP_PASSWORD", "CHANGE_ME"],
+    ],
+  },
+];
+
+// ── deno ─────────────────────────────────────────────────────────────────────
+
+async function ensureDeno(): Promise<void> {
+  if (await exists(DENO)) {
+    console.log(`Deno found at ${DENO}`);
+    return;
+  }
+  console.log("Installing Deno …");
+  await run(
+    "sh",
+    "-c",
+    `curl -fsSL https://deno.land/install.sh | DENO_INSTALL=${HOME}/.deno sh`,
+  );
+  if (!(await exists(DENO))) {
+    throw new Error(`Deno not found at ${DENO} after install`);
+  }
+}
+
+// ── repos ────────────────────────────────────────────────────────────────────
+
+async function ensureRepo(root: string, url: string): Promise<void> {
+  if (await exists(`${root}/.git`)) {
+    console.log(`Updating ${root} …`);
+    await run("git", "-C", root, "fetch", "origin", "main");
+    await run("git", "-C", root, "reset", "--hard", "origin/main");
+    await run("git", "-C", root, "submodule", "update", "--init", "--recursive");
+  } else {
+    console.log(`Cloning ${url} → ${root} …`);
+    await run("git", "clone", "--recurse-submodules", url, root);
+  }
+}
+
+// ── secrets ──────────────────────────────────────────────────────────────────
+
+/**
+ * For each env file with CHANGE_ME stubs, ensure a sibling .env.secrets exists.
+ * Prompts interactively for any still-unset values.
+ */
+async function ensureSecrets(): Promise<void> {
+  console.log("\n==> Checking .env.secrets files …\n");
+  for (const def of ENV_FILES) {
+    const root = def.root === "org" ? ORG_ROOT : REF_ROOT;
+    const envFile = `${root}/${def.path}`;
+    if (!(await exists(envFile))) {
+      console.log(`  SKIP ${envFile} (not found)`);
+      continue;
+    }
+
+    const stubVars = [...parseEnv(await Deno.readTextFile(envFile))]
+      .filter(([, v]) => v === "CHANGE_ME")
+      .map(([k]) => k);
+    if (stubVars.length === 0) continue;
+
+    const secretsFile = `${envFile}.secrets`;
+    const existing = (await exists(secretsFile))
+      ? parseEnv(await Deno.readTextFile(secretsFile))
+      : new Map<string, string>();
+
+    let dirty = false;
+    for (const k of stubVars) {
+      const cur = existing.get(k);
+      if (cur !== undefined && cur !== "CHANGE_ME") continue; // already set
+
+      // 1) shell env
+      const fromEnv = Deno.env.get(k);
+      if (fromEnv) {
+        existing.set(k, fromEnv);
+        dirty = true;
+        console.log(`  ${def.path}.secrets: ${k} <- shell env`);
+        continue;
+      }
+
+      // 2) _KEY_HEX suffix → generate
+      if (k.endsWith("_KEY_HEX")) {
+        existing.set(k, await generateKeyHex());
+        dirty = true;
+        console.log(`  ${def.path}.secrets: ${k} <- generated k256 key`);
+        continue;
+      }
+
+      // 3) prompt
+      console.log(`\n  ── ${def.path} ──`);
+      const val = await promptLine(`  Enter ${k}: `);
+      if (val) {
+        existing.set(k, val);
+        dirty = true;
+      } else {
+        existing.set(k, "CHANGE_ME");
+        secretWarnings.push(`${secretsFile} needs a real value for ${k}`);
+      }
+    }
+
+    if (dirty || !(await exists(secretsFile))) {
+      const body = [...existing]
+        .map(([k, v]) => `${k}=${v}`)
+        .join("\n") + "\n";
+      await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
+      await Deno.chmod(secretsFile, 0o600);
+    }
+  }
+}
+
+// ── systemd units ────────────────────────────────────────────────────────────
+
+function writeTimerUnit(def: UnitDef): string {
+  return `[Unit]
+Description=${def.description}
+
+[Timer]
+OnBootSec=2min
+OnCalendar=*:0/5
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+`;
+}
+
+function writeServiceUnit(def: UnitDef): string {
+  const lines: string[] = [];
+  lines.push("[Unit]");
+  lines.push(`Description=${def.description}`);
+  if (def.after) lines.push(`After=${def.after}`);
+  if (def.wants) lines.push(`Wants=${def.wants}`);
+  lines.push("");
+  lines.push("[Service]");
+  lines.push(`Type=${def.type ?? "simple"}`);
+  lines.push(`SyslogIdentifier=${def.name.replace(".service", "")}`);
+  lines.push(`User=${REMOTE_USER}`);
+  lines.push(`WorkingDirectory=${def.workingDir}`);
+  lines.push(`Environment=HOME=${HOME}`);
+  lines.push(`Environment=PATH=${PATH_ENV}`);
+  for (const f of def.envFiles ?? []) {
+    lines.push(`EnvironmentFile=${f}`);
+  }
+  for (const [k, v] of def.extraEnv ?? []) {
+    lines.push(`Environment=${k}=${v}`);
+  }
+  lines.push(`ExecStart=${def.execStart}`);
+  lines.push(`Restart=${def.restart ?? "on-failure"}`);
+  lines.push("RestartSec=5");
+  lines.push("KillMode=mixed");
+  lines.push("");
+  lines.push("[Install]");
+  lines.push("WantedBy=multi-user.target");
+  return lines.join("\n") + "\n";
+}
+
+async function installUnits(): Promise<void> {
+  console.log("\n==> Installing systemd units …\n");
+  for (const def of UNITS) {
+    const content = def.type === "timer"
+      ? writeTimerUnit(def)
+      : writeServiceUnit(def);
+    const dest = `${SYSTEMD_DIR}/${def.name}`;
+    // Only write if different (idempotent)
+    const existing = await exists(dest)
+      ? await Deno.readTextFile(dest)
+      : "";
+    if (existing !== content) {
+      console.log(`  write ${dest}`);
+      const tmp = `/tmp/${def.name}`;
+      await Deno.writeTextFile(tmp, content);
+      await run("sudo", "cp", tmp, dest);
+      await Deno.remove(tmp);
+    } else {
+      console.log(`  skip ${dest} (unchanged)`);
+    }
+  }
+}
+
+// ── caddy install ────────────────────────────────────────────────────────────
+
+async function ensureCaddy(): Promise<void> {
+  console.log("\n==> Ensuring Caddy with cloudflare DNS module …\n");
+  await run(
+    "bash",
+    "-c",
+    `
+set -euo pipefail
+
+if caddy list-modules 2>/dev/null | grep -q 'dns.providers.cloudflare'; then
+  echo "Caddy already has dns.providers.cloudflare -- skipping build"
+  exit 0
+fi
+
+echo "cloudflare DNS module missing -- installing Caddy + building with xcaddy"
+sudo apt-get update
+# Fix any broken dpkg state from prior interrupted installs
+sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a || true
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -f -y || true
+
+if ! command -v caddy >/dev/null 2>&1; then
+  sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+  sudo apt-get update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::="--force-confold" caddy
+fi
+
+command -v go >/dev/null 2>&1 || sudo apt-get install -y golang-go
+
+if ! command -v xcaddy >/dev/null 2>&1; then
+  wget -q "https://github.com/caddyserver/xcaddy/releases/download/v0.4.5/xcaddy_0.4.5_linux_amd64.deb" -O /tmp/xcaddy.deb
+  sudo dpkg -i /tmp/xcaddy.deb
+fi
+
+xcaddy build --with github.com/caddy-dns/cloudflare --output /tmp/caddy-cloudflare
+sudo mv /tmp/caddy-cloudflare /usr/bin/caddy
+sudo chmod 0755 /usr/bin/caddy
+
+caddy list-modules 2>/dev/null | grep -q 'dns.providers.cloudflare' || { echo "ERROR: cloudflare DNS module still missing after build"; exit 1; }
+echo "Caddy now has dns.providers.cloudflare"
+`,
+  );
+}
+
+// ── Caddyfile ────────────────────────────────────────────────────────────────
+
+const CADDYFILE_CONTENT = `# Caddyfile — managed by scripts/install-prod.ts
+# Installed to /etc/caddy/Caddyfile
+
+{
+\tadmin unix//opt/caddy/caddy-admin.sock
+}
+
+# --- compute provider OIDC issuer ---
+https://mini-cloud-0002.fedfork.com {
+\treverse_proxy http://127.0.0.1:9000
+}
+`;
+
+async function installCaddyfile(): Promise<void> {
+  console.log("\n==> Installing Caddyfile …\n");
+  const existing = await exists(CADDY_TARGET)
+    ? await Deno.readTextFile(CADDY_TARGET)
+    : "";
+  if (existing !== CADDYFILE_CONTENT) {
+    const tmp = "/tmp/Caddyfile";
+    await Deno.writeTextFile(tmp, CADDYFILE_CONTENT);
+    await run("sudo", "mkdir", "-p", CADDY_TARGET.substring(0, CADDY_TARGET.lastIndexOf("/")));
+    await run("sudo", "cp", tmp, CADDY_TARGET);
+    await Deno.remove(tmp);
+    console.log(`  wrote ${CADDY_TARGET}`);
+    console.log("  reloading caddy …");
+    await run("sudo", "systemctl", "reload", "caddy");
+  } else {
+    console.log(`  skip ${CADDY_TARGET} (unchanged)`);
+  }
+}
+
+// ── git-pull-and-rebuild script ──────────────────────────────────────────────
+
+const GIT_PULL_SCRIPT = `#!/usr/bin/env bash
+set -euo pipefail
+
+export HOME="${HOME}"
+ORG_ROOT="\${HOME}/prod-org-root"
+SPA_SRC="\${ORG_ROOT}/${SPA_SOURCE_REL}"
+DEPLOY_DIR="${CADDY_DEPLOY_DIR}"
+
+# npm may be installed via nvm; ensure it's on PATH
+export NVM_DIR="\${HOME}/.config/nvm"
+[ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
+
+cd "\${ORG_ROOT}"
+
+BEFORE=\$(git rev-parse HEAD 2>/dev/null || echo "none")
+git fetch origin main
+git reset --hard origin/main
+git submodule update --init --recursive
+AFTER=\$(git rev-parse HEAD)
+
+if [ "\$BEFORE" != "\$AFTER" ]; then
+  echo "[git-pull] new commits: \${BEFORE:0:7} → \${AFTER:0:7}"
+
+  if [ -f "\${SPA_SRC}/package.json" ]; then
+    echo "[git-pull] rebuilding compute-spa …"
+    cd "\${SPA_SRC}"
+
+    npm install --no-audit --no-fund
+    npm run build
+
+    if [ -d dist ]; then
+      echo "[git-pull] deploying to \${DEPLOY_DIR} …"
+      sudo mkdir -p "\${DEPLOY_DIR}"
+      rm -rf /tmp/graph-viewer-deploy
+      cp -r dist /tmp/graph-viewer-deploy
+      sudo rm -rf "\${DEPLOY_DIR:?}"/*
+      sudo cp -r /tmp/graph-viewer-deploy/* "\${DEPLOY_DIR}/"
+      sudo chown -R caddy:caddy "\${DEPLOY_DIR}"
+      rm -rf /tmp/graph-viewer-deploy
+      echo "[git-pull] deploy complete"
+    else
+      echo "[git-pull] WARNING: no dist/ after build"
+    fi
+  fi
+else
+  echo "[git-pull] no new commits"
+fi
+`;
+
+async function installGitPullScript(): Promise<void> {
+  const dest = `${HOME}/bin/git-pull-and-rebuild.sh`;
+  console.log(`  writing ${dest}`);
+  await Deno.mkdir(`${HOME}/bin`, { recursive: true });
+  await Deno.writeTextFile(dest, GIT_PULL_SCRIPT);
+  await Deno.chmod(dest, 0o755);
+}
+
+// ── env files ────────────────────────────────────────────────────────────────
+
+async function writeEnvFiles(): Promise<void> {
+  console.log("\n==> Writing .env files …\n");
+  for (const def of ENV_FILES) {
+    const root = def.root === "org" ? ORG_ROOT : REF_ROOT;
+    const filePath = `${root}/${def.path}`;
+    const dir = filePath.substring(0, filePath.lastIndexOf("/"));
+    await Deno.mkdir(dir, { recursive: true });
+
+    // Read existing to preserve custom vars not in our definition
+    const existing = (await exists(filePath))
+      ? parseEnv(await Deno.readTextFile(filePath))
+      : new Map<string, string>();
+
+    // Merge: new vars always set; existing keys preserved unless we're overriding
+    for (const [k, v] of def.vars) {
+      if (!existing.has(k) || v !== "CHANGE_ME") {
+        existing.set(k, v);
+      }
+    }
+
+    const body = [...existing]
+      .map(([k, v]) => `${k}=${v}`)
+      .join("\n") + "\n";
+    const current = await exists(filePath)
+      ? await Deno.readTextFile(filePath)
+      : "";
+    if (current !== body) {
+      console.log(`  write ${filePath}`);
+      await Deno.writeTextFile(filePath, body);
+    } else {
+      console.log(`  skip ${filePath} (unchanged)`);
+    }
+  }
+}
+
+// ── caddy env fix ────────────────────────────────────────────────────────────
+
+/**
+ * Ensure the caddy systemd service has CF_API_TOKEN in its environment.
+ * The Caddyfile uses `{env.CF_API_TOKEN}` so Caddy must inherit the var.
+ * We write an override snippet into /etc/systemd/system/caddy.service.d/.
+ */
+async function ensureCaddyEnv(): Promise<void> {
+  const cfToken = Deno.env.get("CF_API_TOKEN") || "CHANGE_ME";
+  const unitFile = "/usr/lib/systemd/system/caddy.service";
+
+  const content = `[Unit]
+Description=Caddy
+Documentation=https://caddyserver.com/docs/
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+Type=notify
+User=root
+Group=root
+Environment=CF_API_TOKEN=${cfToken}
+ExecStart=/usr/bin/caddy run --environ --config /etc/caddy/Caddyfile
+ExecReload=/usr/bin/caddy reload --config /etc/caddy/Caddyfile --force
+TimeoutStopSec=5s
+LimitNOFILE=1048576
+LimitNPROC=512
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
+`;
+
+  const existing = (await exists(unitFile))
+    ? await Deno.readTextFile(unitFile)
+    : "";
+  if (existing !== content) {
+    const tmp = "/tmp/caddy.service";
+    await Deno.writeTextFile(tmp, content);
+    await run("sudo", "cp", tmp, unitFile);
+    await Deno.remove(tmp);
+    console.log(`  wrote ${unitFile}`);
+    await run("sudo", "systemctl", "daemon-reload");
+    await run("sudo", "systemctl", "enable", "--now", "caddy");
+    await run("sudo", "systemctl", "restart", "caddy");
+  } else {
+    console.log(`  skip ${unitFile} (unchanged)`);
+  }
+}
+
+// ── enable & start ───────────────────────────────────────────────────────────
+
+async function tryRun(cmd: string, ...args: string[]): Promise<boolean> {
+  try {
+    await run(cmd, ...args);
+    return true;
+  } catch (e) {
+    console.error(`  WARN: ${(e as Error).message}`);
+    return false;
+  }
+}
+
+async function enableUnits(): Promise<void> {
+  console.log("\n==> Enabling & starting units …\n");
+  await run("sudo", "systemctl", "daemon-reload");
+
+  for (const def of UNITS) {
+    if (def.type === "timer") {
+      console.log(`  enable --now ${def.name}`);
+      await tryRun("sudo", "systemctl", "enable", "--now", def.name);
+    } else if (def.name.endsWith(".service")) {
+      console.log(`  enable --now ${def.name}`);
+      await tryRun("sudo", "systemctl", "enable", "--now", def.name);
+      await tryRun("sudo", "systemctl", "restart", def.name);
+    }
+  }
+
+  // Reload caddy after all backends are up
+  console.log("\n  reloading caddy …");
+  await tryRun("sudo", "systemctl", "reload", "caddy");
+}
+
+async function showStatus(): Promise<void> {
+  console.log("\n==> Service status …\n");
+  for (const def of UNITS) {
+    if (def.name.endsWith(".timer")) continue;
+    console.log(
+      await capture(
+        "systemctl",
+        "--no-pager",
+        "--lines=0",
+        "status",
+        def.name,
+      ),
+    );
+    console.log("");
+  }
+}
+
+// ── deploy (remote) ──────────────────────────────────────────────────────────
+
+async function deployRemote(): Promise<void> {
+  const self = new URL(import.meta.url).pathname;
+
+  console.log(`Deploying to ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PORT} …`);
+
+  // SCP self to remote
+  await run(
+    "scp",
+    "-P",
+    REMOTE_PORT,
+    "-o",
+    "StrictHostKeyChecking=accept-new",
+    self,
+    `${REMOTE_USER}@${REMOTE_HOST}:/tmp/`,
+  );
+
+  // SSH → run local install (inline Caddyfile + units are self-contained)
+  await run(
+    "ssh",
+    "-p",
+    REMOTE_PORT,
+    "-o",
+    "StrictHostKeyChecking=accept-new",
+    `${REMOTE_USER}@${REMOTE_HOST}`,
+    `$HOME/.deno/bin/deno run --allow-all /tmp/install-prod.ts --local`,
+  );
+
+  console.log("\nDeploy complete.");
+}
+
+// ── main ─────────────────────────────────────────────────────────────────────
+
+async function localInstall(): Promise<void> {
+  console.log("=== install-prod (local) ===\n");
+
+  await ensureDeno();
+  await ensureCaddy();
+  await ensureRepo(ORG_ROOT, ORG_REPO_URL);
+  await ensureRepo(REF_ROOT, REF_REPO_URL);
+  await writeEnvFiles();
+  await ensureSecrets();
+  await installGitPullScript();
+  await installUnits();
+  await installCaddyfile();
+  await ensureCaddyEnv();
+  await enableUnits();
+  await showStatus();
+
+  if (secretWarnings.length > 0) {
+    console.log(
+      "==> WARNING: unset secrets left as CHANGE_ME " +
+        "(re-run or edit .env.secrets files):",
+    );
+    for (const w of secretWarnings) console.log(`  ${w}`);
+  }
+
+  console.log(
+    "\nDone. Tail logs: journalctl -u atproto-relay -u bidder -u hono-jsr -u spindle -f",
+  );
+}
+
+// ── entry ────────────────────────────────────────────────────────────────────
+
+const args = Deno.args.map((a) => a.trim()).filter(Boolean);
+
+if (args.includes("--deploy") || args.includes("-d")) {
+  await deployRemote();
+} else {
+  await localInstall();
+}

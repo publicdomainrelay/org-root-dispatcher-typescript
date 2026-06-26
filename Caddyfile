@@ -1,0 +1,14 @@
+# Caddyfile for mini-cloud-0002.chadig.com
+# Installed to /etc/caddy/Caddyfile by scripts/install-prod.ts
+#
+# Requires: caddy + caddy-dns/cloudflare module (built via xcaddy)
+# Requires: CF_API_TOKEN in environment
+
+{
+	admin unix//opt/caddy/caddy-admin.sock
+}
+
+# --- compute provider OIDC issuer ---
+https://mini-cloud-0002.fedfork.com {
+	reverse_proxy http://127.0.0.1:9000
+}

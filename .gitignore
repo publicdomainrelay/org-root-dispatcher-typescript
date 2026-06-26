@@ -1,3 +1,4 @@
 *.swp
 .codegraph/
 .reference/
+.cache_ggshield
