@@ -483,7 +483,7 @@ async function ensureVmImages(): Promise<void> {
     // Pre-build runs in background — takes 5-10 min (chroot, kernel, squashfs).
     // First RFP provision will block until this completes.
     console.log("  starting VM guest image pre-build in background …");
-    const cmd = new Deno.Command("docker", {
+    const child = new Deno.Command("docker", {
       args: ["run", "--rm", "--privileged",
         "-v", `${cacheDir}:/root/.cache/simple-qemu`,
         "--entrypoint", "deno",
@@ -492,10 +492,9 @@ async function ensureVmImages(): Promise<void> {
       ],
       stdout: "inherit",
       stderr: "inherit",
-    });
-    cmd.spawn().then(async () => {
-      await Deno.writeTextFile(buildSentinel, "");
-    }).catch(() => {});
+    }).spawn();
+    // Fire-and-forget: don't block deploy on pre-build
+    child.status.then(() => Deno.writeTextFile(buildSentinel, "")).catch(() => {});
   }
 }
 
