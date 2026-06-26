@@ -483,8 +483,9 @@ async function ensureVmImages(): Promise<void> {
     console.log("  pre-building VM guest image (this takes a few minutes) …");
     await run("docker", "run", "--rm", "--privileged",
       "-v", `${cacheDir}:/root/.cache/simple-qemu`,
+      "--entrypoint", "deno",
       QEMU_RUNNER_IMAGE,
-      "build", "--distro=ubuntu",
+      "run", "-A", "qemu-standalone.ts", "build", "--distro=ubuntu",
     );
     await Deno.writeTextFile(buildSentinel, "");
     console.log("  VM guest image cache warm");
