@@ -31,6 +31,9 @@ const REMOTE_HOST = "mini-cloud-0002.chadig.com";
 const REMOTE_PORT = "22";
 const REMOTE_USER = "johnandersen777";
 const SPA_SOURCE_REL = ".reference/rbac/src/typescript/compute-spa";
+const QEMU_RUNNER_IMAGE = "ccripoc-qemu-runner:latest";
+const QEMU_RUNNER_DOCKERFILE = `${REF_ROOT}/src/typescript/qemu/qemu-runner.Dockerfile`;
+const QEMU_RUNNER_CONTEXT = `${REF_ROOT}/src/typescript/qemu`;
 
 const secretWarnings: string[] = [];
 
@@ -181,6 +184,8 @@ const ENV_FILES: EnvDef[] = [
       ["REGISTRY_ENDPOINT", "https://relay.mini-cloud-0002.chadig.com"],
       ["PLC_DIRECTORY_URL", "https://plc.directory"],
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
+      ["COMPUTE_PROVIDER_LOCAL_VM_IMAGE", QEMU_RUNNER_IMAGE],
+      ["COMPUTE_PROVIDER_LOCAL_CACHE_DIR", `${HOME}/.cache/pdr-local`],
       ["OFFERING_REFRESH_SEC", "300"],
       ["RFP_FIREHOSE_MODE", "subscriberepos"],
       ["RFP_FIREHOSE_URL", "wss://bsky.network,wss://relay.mini-cloud-0002.chadig.com"],
@@ -427,6 +432,41 @@ caddy list-modules 2>/dev/null | grep -q 'dns.providers.cloudflare' || { echo "E
 echo "Caddy now has dns.providers.cloudflare"
 `,
   );
+}
+
+// ── VM images ────────────────────────────────────────────────────────────────
+
+async function ensureVmImages(): Promise<void> {
+  console.log("\n==> Building VM images …\n");
+
+  // Build qemu-runner from the reference repo Dockerfile so we don't
+  // depend on atcr.io (ATCR requires AT Protocol auth for pulls).
+  const imageId = await capture("docker", "images", "-q", QEMU_RUNNER_IMAGE).catch(() => "");
+  if (imageId) {
+    console.log(`  ${QEMU_RUNNER_IMAGE} already built`);
+    return;
+  }
+
+  if (!(await exists(QEMU_RUNNER_DOCKERFILE))) {
+    console.log(`  SKIP: ${QEMU_RUNNER_DOCKERFILE} not found (ref repo not cloned yet?)`);
+    return;
+  }
+
+  console.log(`  building ${QEMU_RUNNER_IMAGE} …`);
+  await run("docker", "build",
+    "--pull",
+    "-f", QEMU_RUNNER_DOCKERFILE,
+    "-t", QEMU_RUNNER_IMAGE,
+    QEMU_RUNNER_CONTEXT,
+  );
+
+  // Also ensure container-runner-ubuntu gets built — the compute provider
+  // builds it on first use, but we can force a build now.
+  const crTag = "container-runner-ubuntu:latest";
+  const crId = await capture("docker", "images", "-q", crTag).catch(() => "");
+  if (!crId) {
+    console.log(`  ${crTag} will be built on first provisioning (cold start OK)`);
+  }
 }
 
 // ── caddy user + runtime dirs ────────────────────────────────────────────────
@@ -749,6 +789,7 @@ async function localInstall(): Promise<void> {
   await ensureHostsEntries();
   await ensureRepo(ORG_ROOT, ORG_REPO_URL);
   await ensureRepo(REF_ROOT, REF_REPO_URL);
+  await ensureVmImages();
   await writeEnvFiles();
   await ensureSecrets();
   await installGitPullScript();
