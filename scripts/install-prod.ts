@@ -547,6 +547,14 @@ async function writeEnvFiles(): Promise<void> {
       }
     }
 
+    // Purge stale CHANGE_ME entries no longer in the current definition
+    const defKeys = new Set(def.vars.map(([k]) => k));
+    for (const [k, v] of existing) {
+      if (v === "CHANGE_ME" && !defKeys.has(k)) {
+        existing.delete(k);
+      }
+    }
+
     const body = [...existing]
       .map(([k, v]) => `${k}=${v}`)
       .join("\n") + "\n";
