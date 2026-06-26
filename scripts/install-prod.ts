@@ -324,12 +324,17 @@ async function ensureSecrets(): Promise<void> {
           secretsPurged = true;
         }
       }
-      if (secretsPurged && existing.size > 0) {
-        const body = [...existing]
-          .map(([k, v]) => `${k}=${v}`)
-          .join("\n") + "\n";
-        await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
-        await Deno.chmod(secretsFile, 0o600);
+      if (secretsPurged) {
+        if (existing.size > 0) {
+          const body = [...existing]
+            .map(([k, v]) => `${k}=${v}`)
+            .join("\n") + "\n";
+          await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
+          await Deno.chmod(secretsFile, 0o600);
+        } else {
+          // All entries purged — remove the secrets file entirely
+          await Deno.remove(secretsFile).catch(() => {});
+        }
         console.log(`  purged stale secrets from ${def.path}.secrets`);
       }
     }
