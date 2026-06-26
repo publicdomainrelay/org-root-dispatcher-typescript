@@ -192,12 +192,9 @@ const ENV_FILES: EnvDef[] = [
       ["RELAY_DISPATCHER_HOST", "xrpc.fedproxy.com"],
       ["REGISTRY_ENDPOINT", "https://reg.market.fedfork.com"],
       ["PLC_DIRECTORY_URL", "https://plc.directory"],
-      ["ATP_PDS_URL", "https://bsky.social"],
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
       ["OFFERING_REFRESH_SEC", "300"],
       ["RFP_FIREHOSE_MODE", "off"],
-      ["ATP_HANDLE", "CHANGE_ME"],
-      ["ATP_PASSWORD", "CHANGE_ME"],
     ],
   },
   {
@@ -565,15 +562,10 @@ async function writeEnvFiles(): Promise<void> {
   }
 }
 
-// ── caddy env fix ────────────────────────────────────────────────────────────
+// ── caddy systemd unit ──────────────────────────────────────────────────────
 
-/**
- * Ensure the caddy systemd service has CF_API_TOKEN in its environment.
- * The Caddyfile uses `{env.CF_API_TOKEN}` so Caddy must inherit the var.
- * We write an override snippet into /etc/systemd/system/caddy.service.d/.
- */
-async function ensureCaddyEnv(): Promise<void> {
-  const cfToken = Deno.env.get("CF_API_TOKEN") || "CHANGE_ME";
+/** Write the caddy systemd unit (without CF_API_TOKEN — no DNS-01 needed). */
+async function installCaddyUnit(): Promise<void> {
   const unitFile = "/usr/lib/systemd/system/caddy.service";
 
   const content = `[Unit]
@@ -586,7 +578,6 @@ Requires=network-online.target
 Type=notify
 User=root
 Group=root
-Environment=CF_API_TOKEN=${cfToken}
 ExecStart=/usr/bin/caddy run --environ --config /etc/caddy/Caddyfile
 ExecReload=/usr/bin/caddy reload --config /etc/caddy/Caddyfile --force
 TimeoutStopSec=5s
@@ -607,9 +598,6 @@ WantedBy=multi-user.target
     await run("sudo", "cp", tmp, unitFile);
     await Deno.remove(tmp);
     console.log(`  wrote ${unitFile}`);
-    await run("sudo", "systemctl", "daemon-reload");
-    await run("sudo", "systemctl", "enable", "--now", "caddy");
-    await run("sudo", "systemctl", "restart", "caddy");
   } else {
     console.log(`  skip ${unitFile} (unchanged)`);
   }
@@ -710,7 +698,9 @@ async function localInstall(): Promise<void> {
   await installGitPullScript();
   await installUnits();
   await installCaddyfile();
-  await ensureCaddyEnv();
+  await installCaddyUnit();
+  await run("sudo", "systemctl", "daemon-reload");
+  await tryRun("sudo", "systemctl", "enable", "--now", "caddy");
   await enableUnits();
   await showStatus();
 
