@@ -480,15 +480,22 @@ async function ensureVmImages(): Promise<void> {
   if (await exists(buildSentinel)) {
     console.log("  VM guest image cache already warm");
   } else {
-    console.log("  pre-building VM guest image (this takes a few minutes) …");
-    await run("docker", "run", "--rm", "--privileged",
-      "-v", `${cacheDir}:/root/.cache/simple-qemu`,
-      "--entrypoint", "deno",
-      QEMU_RUNNER_IMAGE,
-      "run", "-A", "qemu-standalone.ts", "build", "--distro=ubuntu",
-    );
-    await Deno.writeTextFile(buildSentinel, "");
-    console.log("  VM guest image cache warm");
+    // Pre-build runs in background — takes 5-10 min (chroot, kernel, squashfs).
+    // First RFP provision will block until this completes.
+    console.log("  starting VM guest image pre-build in background …");
+    const cmd = new Deno.Command("docker", {
+      args: ["run", "--rm", "--privileged",
+        "-v", `${cacheDir}:/root/.cache/simple-qemu`,
+        "--entrypoint", "deno",
+        QEMU_RUNNER_IMAGE,
+        "run", "-A", "qemu-standalone.ts", "build", "--distro=ubuntu",
+      ],
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    cmd.spawn().then(async () => {
+      await Deno.writeTextFile(buildSentinel, "");
+    }).catch(() => {});
   }
 }
 
