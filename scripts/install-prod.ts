@@ -441,24 +441,23 @@ async function ensureVmImages(): Promise<void> {
 
   // Build qemu-runner from the reference repo Dockerfile so we don't
   // depend on atcr.io (ATCR requires AT Protocol auth for pulls).
-  const imageId = await capture("docker", "images", "-q", QEMU_RUNNER_IMAGE).catch(() => "");
-  if (imageId) {
-    console.log(`  ${QEMU_RUNNER_IMAGE} already built`);
-    return;
-  }
-
   if (!(await exists(QEMU_RUNNER_DOCKERFILE))) {
     console.log(`  SKIP: ${QEMU_RUNNER_DOCKERFILE} not found (ref repo not cloned yet?)`);
     return;
   }
 
-  console.log(`  building ${QEMU_RUNNER_IMAGE} …`);
-  await run("docker", "build",
-    "--pull",
-    "-f", QEMU_RUNNER_DOCKERFILE,
-    "-t", QEMU_RUNNER_IMAGE,
-    QEMU_RUNNER_CONTEXT,
-  );
+  const imageId = await capture("docker", "images", "-q", QEMU_RUNNER_IMAGE).catch(() => "");
+  if (!imageId) {
+    console.log(`  building ${QEMU_RUNNER_IMAGE} …`);
+    await run("docker", "build",
+      "--pull",
+      "-f", QEMU_RUNNER_DOCKERFILE,
+      "-t", QEMU_RUNNER_IMAGE,
+      QEMU_RUNNER_CONTEXT,
+    );
+  } else {
+    console.log(`  ${QEMU_RUNNER_IMAGE} already built`);
+  }
 
   // Also ensure container-runner-ubuntu gets built — the compute provider
   // builds it on first use, but we can force a build now.
