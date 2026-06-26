@@ -266,53 +266,72 @@ async function ensureSecrets(): Promise<void> {
     const stubVars = [...parseEnv(await Deno.readTextFile(envFile))]
       .filter(([, v]) => v === "CHANGE_ME")
       .map(([k]) => k);
-    if (stubVars.length === 0) continue;
 
     const secretsFile = `${envFile}.secrets`;
-    const existing = (await exists(secretsFile))
-      ? parseEnv(await Deno.readTextFile(secretsFile))
-      : new Map<string, string>();
+    if (stubVars.length > 0 || (await exists(secretsFile))) {
+      const existing = (await exists(secretsFile))
+        ? parseEnv(await Deno.readTextFile(secretsFile))
+        : new Map<string, string>();
 
-    let dirty = false;
-    for (const k of stubVars) {
-      const cur = existing.get(k);
-      if (cur !== undefined && cur !== "CHANGE_ME") continue; // already set
+      let dirty = false;
+      for (const k of stubVars) {
+        const cur = existing.get(k);
+        if (cur !== undefined && cur !== "CHANGE_ME") continue;
 
-      // 1) shell env
-      const fromEnv = Deno.env.get(k);
-      if (fromEnv) {
-        existing.set(k, fromEnv);
-        dirty = true;
-        console.log(`  ${def.path}.secrets: ${k} <- shell env`);
-        continue;
+        // 1) shell env
+        const fromEnv = Deno.env.get(k);
+        if (fromEnv) {
+          existing.set(k, fromEnv);
+          dirty = true;
+          console.log(`  ${def.path}.secrets: ${k} <- shell env`);
+          continue;
+        }
+
+        // 2) _KEY_HEX suffix → generate
+        if (k.endsWith("_KEY_HEX")) {
+          existing.set(k, await generateKeyHex());
+          dirty = true;
+          console.log(`  ${def.path}.secrets: ${k} <- generated k256 key`);
+          continue;
+        }
+
+        // 3) prompt
+        console.log(`\n  ── ${def.path} ──`);
+        const val = await promptLine(`  Enter ${k}: `);
+        if (val) {
+          existing.set(k, val);
+          dirty = true;
+        } else {
+          existing.set(k, "CHANGE_ME");
+          secretWarnings.push(`${secretsFile} needs a real value for ${k}`);
+        }
       }
 
-      // 2) _KEY_HEX suffix → generate
-      if (k.endsWith("_KEY_HEX")) {
-        existing.set(k, await generateKeyHex());
-        dirty = true;
-        console.log(`  ${def.path}.secrets: ${k} <- generated k256 key`);
-        continue;
+      if (dirty || !(await exists(secretsFile))) {
+        const body = [...existing]
+          .map(([k, v]) => `${k}=${v}`)
+          .join("\n") + "\n";
+        await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
+        await Deno.chmod(secretsFile, 0o600);
       }
 
-      // 3) prompt
-      console.log(`\n  ── ${def.path} ──`);
-      const val = await promptLine(`  Enter ${k}: `);
-      if (val) {
-        existing.set(k, val);
-        dirty = true;
-      } else {
-        existing.set(k, "CHANGE_ME");
-        secretWarnings.push(`${secretsFile} needs a real value for ${k}`);
+      // Purge secrets entries whose keys no longer appear in the main env file
+      const envKeys = new Set(parseEnv(await Deno.readTextFile(envFile)).keys());
+      let secretsPurged = false;
+      for (const k of existing.keys()) {
+        if (!envKeys.has(k)) {
+          existing.delete(k);
+          secretsPurged = true;
+        }
       }
-    }
-
-    if (dirty || !(await exists(secretsFile))) {
-      const body = [...existing]
-        .map(([k, v]) => `${k}=${v}`)
-        .join("\n") + "\n";
-      await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
-      await Deno.chmod(secretsFile, 0o600);
+      if (secretsPurged && existing.size > 0) {
+        const body = [...existing]
+          .map(([k, v]) => `${k}=${v}`)
+          .join("\n") + "\n";
+        await Deno.writeTextFile(secretsFile, body, { mode: 0o600 });
+        await Deno.chmod(secretsFile, 0o600);
+        console.log(`  purged stale secrets from ${def.path}.secrets`);
+      }
     }
   }
 }
@@ -570,6 +589,37 @@ async function writeEnvFiles(): Promise<void> {
   }
 }
 
+// ── /etc/hosts ───────────────────────────────────────────────────────────────
+
+/**
+ * Services using HOSTNAME env var bind Deno.serve to the public hostname,
+ * which doesn't resolve locally. Map service hostnames to loopback so
+ * Deno.serve() doesn't fail with "Name or service not known".
+ */
+async function ensureHostsEntries(): Promise<void> {
+  const hostsFile = "/etc/hosts";
+  const entries: [string, string][] = [
+    ["127.0.0.1", "reg.market.fedfork.com"],
+  ];
+  let contents = await Deno.readTextFile(hostsFile);
+  let changed = false;
+  for (const [ip, host] of entries) {
+    if (!contents.split("\n").some((l) => l.includes(ip) && l.includes(host))) {
+      contents += `\n${ip} ${host}\n`;
+      console.log(`  adding ${ip} ${host} to ${hostsFile}`);
+      changed = true;
+    }
+  }
+  if (!changed) {
+    console.log(`  ${hostsFile} entries already present`);
+    return;
+  }
+  const tmp = "/tmp/hosts";
+  await Deno.writeTextFile(tmp, contents);
+  await run("sudo", "cp", tmp, hostsFile);
+  await Deno.remove(tmp);
+}
+
 // ── caddy systemd unit ──────────────────────────────────────────────────────
 
 /** Write the caddy systemd unit (without CF_API_TOKEN — no DNS-01 needed). */
@@ -699,6 +749,7 @@ async function localInstall(): Promise<void> {
 
   await ensureDeno();
   await ensureCaddy();
+  await ensureHostsEntries();
   await ensureRepo(ORG_ROOT, ORG_REPO_URL);
   await ensureRepo(REF_ROOT, REF_REPO_URL);
   await writeEnvFiles();
