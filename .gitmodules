@@ -22,6 +22,9 @@
 [submodule ".reference/compute-contract-reference-implementation-poc"]
 	path = .reference/compute-contract-reference-implementation-poc
 	url = https://github.com/publicdomainrelay/compute-contract-reference-implementation-poc
-[submodule "deno-macos-runner"]
-	path = deno-macos-runner
-	url = https://github.com/publicdomainrelay/deno-macos-runner.git
+[submodule "deno-macos-runner-desktop"]
+	path = deno-macos-runner-desktop
+	url = https://github.com/publicdomainrelay/deno-macos-runner-desktop.git
+[submodule "open-architecture"]
+	path = open-architecture
+	url = https://github.com/publicdomainrelay/open-architecture.git
