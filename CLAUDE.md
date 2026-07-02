@@ -7,6 +7,26 @@ this file = **org root**.
 Always run `./scripts/find-all-package.ts | yq -P` on session start to see where
 everything lives.
 
+## Open Architecture — docs-as-code blueprint
+
+`open-architecture/` is a **docs-as-code** translation of
+`open_architecture_today.md` into TypeScript stub functions organized in ABC
+layers. Each function = one paragraph of the document. Function body = calls to
+sub-concepts that paragraph depends on. **The call graph IS the architecture.**
+Walk the references and you walk her whole reasoning. Explore with:
+
+```
+codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
+```
+
+**STATUS_REPORT.md** (`open-architecture/STATUS_REPORT.md`) maps every
+docs-as-code stub to its production implementation across the polyrepo.
+Read it to understand what's built vs what's still stub.
+
+**Regenerate the status report**: ask Claude to "regenerate the status report"
+or invoke the `status-report` agent. Fans out 5 cavecrew-investigator subagents
+across the polyrepo, maps findings to stubs, writes `STATUS_REPORT.md`.
+
 ## RFP flow is the spine — NEVER bypass it
 
 This entire project exists to provision compute through the **RFP / market
