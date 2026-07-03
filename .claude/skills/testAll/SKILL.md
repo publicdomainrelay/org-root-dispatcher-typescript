@@ -68,4 +68,4 @@ deno run -A scripts/test-all.ts
 
 ## Script flags
 
-- `--org-root <path>` — override org root (default: cwd, passed as first positional arg)
+- `<org-root>` — override org root as first positional arg (default: cwd)

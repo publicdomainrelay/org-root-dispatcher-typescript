@@ -75,7 +75,7 @@ const NEEDS_EMBEDDING_SERVER = [
   "codebase-rag-proxy/hono-codebase-rag-proxy",
 ];
 
-async function startFakeEmbeddingsServer(): Promise<() => void> {
+async function startFakeEmbeddingsServer(): Promise<(() => void) | null> {
   const script = resolve(import.meta.dirname!, "fake-embeddings-server.ts");
   const cmd = new Deno.Command("deno", {
     args: ["run", "-A", script, String(EMBEDDING_PORT)],
@@ -85,15 +85,23 @@ async function startFakeEmbeddingsServer(): Promise<() => void> {
   const child = cmd.spawn();
   const reader = child.stdout.getReader();
   const deadline = Date.now() + 5000;
+  let ready = false;
   while (Date.now() < deadline) {
     const { value, done } = await reader.read();
     if (done) break;
-    if (new TextDecoder().decode(value).includes("ready:")) break;
+    if (new TextDecoder().decode(value).includes("ready:")) { ready = true; break; }
+  }
+  // Verify server actually started
+  if (!ready) {
+    child.kill();
+    console.error("Fake embeddings server failed to start — port may be in use");
+    return null;
   }
   return () => { try { child.kill(); } catch { /* already dead */ } };
 }
 
 async function containerBackendRunning(): Promise<boolean> {
+  // macOS: container CLI
   try {
     const cmd = new Deno.Command("container", {
       args: ["system", "status"],
@@ -101,10 +109,33 @@ async function containerBackendRunning(): Promise<boolean> {
       stderr: "null",
     });
     const { code, stdout } = await cmd.output();
-    return code === 0 && new TextDecoder().decode(stdout).includes("running");
-  } catch {
-    return false;
+    if (code === 0 && new TextDecoder().decode(stdout).includes("running")) return true;
+  } catch { /* not macOS, fall through */ }
+  // Linux/Windows: Docker
+  try {
+    const cmd = new Deno.Command("docker", {
+      args: ["info", "--format", "{{.ServerVersion}}"],
+      stdout: "piped",
+      stderr: "null",
+    });
+    const { code } = await cmd.output();
+    return code === 0;
+  } catch { return false; }
+}
+
+async function workspaceNeedsEmbeddings(ws: WorkspaceTests): Promise<boolean> {
+  // Check deno.json for skalex dependency
+  try {
+    const dj = JSON.parse(await Deno.readTextFile(resolve(ORG_ROOT, ws.workspace, "deno.json")));
+    const imports = dj.imports ?? {};
+    if (Object.values(imports).some((v) => typeof v === "string" && (v.includes("skalex") || v.includes("embedding")))) return true;
+  } catch { /* no deno.json */ }
+  // Check test files for embedding references
+  for (const tf of ws.testFiles) {
+    const content = await Deno.readTextFile(resolve(ORG_ROOT, tf));
+    if (/EMBEDDING_URL|embedding|skalex/i.test(content)) return true;
   }
+  return false;
 }
 
 async function runTests(ws: WorkspaceTests): Promise<TestResult> {
@@ -154,7 +185,10 @@ if (workspaces.length === 0) {
 }
 
 let stopEmbeddingServer: (() => void) | null = null;
-if (workspaces.some((w) => NEEDS_EMBEDDING_SERVER.includes(w.workspace))) {
+const embeddingWorkspaces = await Promise.all(workspaces.map(async (w) =>
+  NEEDS_EMBEDDING_SERVER.includes(w.workspace) || await workspaceNeedsEmbeddings(w)
+));
+if (embeddingWorkspaces.some(Boolean)) {
   stopEmbeddingServer = await startFakeEmbeddingsServer();
 }
 
@@ -169,8 +203,12 @@ if (
   );
 }
 
-const results = await Promise.all(workspaces.map(runTests));
-stopEmbeddingServer?.();
+let results: TestResult[];
+try {
+  results = await Promise.all(workspaces.map(runTests));
+} finally {
+  stopEmbeddingServer?.();
+}
 results.sort((a, b) => a.workspace.localeCompare(b.workspace));
 
 const colWs = Math.max(...results.map((r) => r.workspace.length), 9);
