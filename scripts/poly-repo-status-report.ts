@@ -58,7 +58,7 @@ async function run(cmd: string, cwd: string): Promise<string> {
 
 async function findRepos(orgRoot: string): Promise<string[]> {
   const output = await run(
-    `find . -maxdepth ${MAX_DEPTH} -name .git -type d -not -path '*/.claude/*' | sed 's|/.git||' | sort`,
+    `find . -maxdepth ${MAX_DEPTH} -name .git \\( -type d -o -type f \\) -not -path '*/.claude/*' | sed 's|/.git||' | sort`,
     orgRoot,
   );
   return output.split("\n").filter(Boolean).map((p) => p.replace(/^\.\//, ""));
