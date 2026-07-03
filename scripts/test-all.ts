@@ -59,6 +59,54 @@ async function findWorkspacesWithTests(): Promise<WorkspaceTests[]> {
   }));
 }
 
+const EMBEDDING_PORT = 18080;
+
+// Workspaces whose tests call out to an OpenAI-compatible /v1/embeddings
+// endpoint. retrieval-skalex hardcodes localhost:18080; hono-codebase-rag-proxy
+// defaults to a LAN-only address (192.168.0.20:8080) so it needs the env
+// override to reach the same local fake server.
+const EMBEDDING_WORKSPACE_ENV: Record<string, Record<string, string>> = {
+  "codebase-rag-proxy/hono-codebase-rag-proxy": {
+    EMBEDDING_URL: `http://localhost:${EMBEDDING_PORT}/v1`,
+  },
+};
+const NEEDS_EMBEDDING_SERVER = [
+  "codebase-rag-proxy/lib/retrieval-skalex",
+  "codebase-rag-proxy/hono-codebase-rag-proxy",
+];
+
+async function startFakeEmbeddingsServer(): Promise<() => void> {
+  const script = resolve(import.meta.dirname!, "fake-embeddings-server.ts");
+  const cmd = new Deno.Command("deno", {
+    args: ["run", "-A", script, String(EMBEDDING_PORT)],
+    stdout: "piped",
+    stderr: "null",
+  });
+  const child = cmd.spawn();
+  const reader = child.stdout.getReader();
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (new TextDecoder().decode(value).includes("ready:")) break;
+  }
+  return () => { try { child.kill(); } catch { /* already dead */ } };
+}
+
+async function containerBackendRunning(): Promise<boolean> {
+  try {
+    const cmd = new Deno.Command("container", {
+      args: ["system", "status"],
+      stdout: "piped",
+      stderr: "null",
+    });
+    const { code, stdout } = await cmd.output();
+    return code === 0 && new TextDecoder().decode(stdout).includes("running");
+  } catch {
+    return false;
+  }
+}
+
 async function runTests(ws: WorkspaceTests): Promise<TestResult> {
   const cwd = resolve(ORG_ROOT, ws.workspace);
   const cmd = new Deno.Command("deno", {
@@ -78,7 +126,11 @@ async function runTests(ws: WorkspaceTests): Promise<TestResult> {
     cwd,
     stdout: "piped",
     stderr: "piped",
-    env: { ...Deno.env.toObject(), NO_COLOR: "1" },
+    env: {
+      ...Deno.env.toObject(),
+      NO_COLOR: "1",
+      ...(EMBEDDING_WORKSPACE_ENV[ws.workspace] ?? {}),
+    },
   });
 
   const start = Date.now();
@@ -87,7 +139,7 @@ async function runTests(ws: WorkspaceTests): Promise<TestResult> {
 
   const output = new TextDecoder().decode(stdout);
   const stripped = output.replace(/\x1b\[[0-9;]*m/g, "");
-  const match = stripped.match(/ok\s+\|\s+(\d+)\s+passed\s+\|\s+(\d+)\s+failed/);
+  const match = stripped.match(/(?:ok|FAILED)\s*\|\s*(\d+)\s*passed(?:\s*\([^)]*\))?\s*\|\s*(\d+)\s*failed/);
   const passed = match ? parseInt(match[1]) : 0;
   const failed = match ? parseInt(match[2]) : 0;
 
@@ -101,7 +153,24 @@ if (workspaces.length === 0) {
   Deno.exit(0);
 }
 
+let stopEmbeddingServer: (() => void) | null = null;
+if (workspaces.some((w) => NEEDS_EMBEDDING_SERVER.includes(w.workspace))) {
+  stopEmbeddingServer = await startFakeEmbeddingsServer();
+}
+
+if (
+  workspaces.some((w) => w.workspace === "hono-compute-provider") &&
+  !(await containerBackendRunning())
+) {
+  console.warn(
+    "WARNING: hono-compute-provider has container-integration tests but the " +
+      "`container` backend is not running (container system start). Those " +
+      "tests will fail with connection errors, not code bugs.",
+  );
+}
+
 const results = await Promise.all(workspaces.map(runTests));
+stopEmbeddingServer?.();
 results.sort((a, b) => a.workspace.localeCompare(b.workspace));
 
 const colWs = Math.max(...results.map((r) => r.workspace.length), 9);

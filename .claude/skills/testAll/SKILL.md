@@ -43,7 +43,28 @@ deno run -A scripts/test-all.ts
 - Groups files by nearest parent containing `deno.json` (workspace root)
 - Runs `deno test --no-check` with full permissions in each workspace
 - All workspaces run in parallel via `Promise.all`
-- Parses `deno test` stderr for `ok | N passed | N failed` summary
+- Parses `deno test` stdout for a `ok | N passed | N failed` or
+  `FAILED | N passed | N failed` summary line
+
+## Environment setup done automatically
+
+- **codebase-rag-proxy embeddings**: `retrieval-skalex` and
+  `hono-codebase-rag-proxy` tests need a real OpenAI-compatible
+  `/v1/embeddings` endpoint. The script spawns
+  `scripts/fake-embeddings-server.ts` on `localhost:18080` (deterministic
+  hash-based vectors, no real model) before running those two workspaces,
+  and injects `EMBEDDING_URL=http://localhost:18080/v1` for
+  `hono-codebase-rag-proxy` (its default points at a LAN-only address).
+  Server is killed after the run.
+- **hono-compute-provider container tests**: needs the macOS `container`
+  backend running (`container system start`). The script checks
+  `container system status` and prints a warning (not a failure) if it's
+  down — those tests will show connection-timeout failures, not code bugs,
+  when the backend is unavailable. It does NOT auto-start the backend or
+  clean up leftover test containers — if `container list` shows a pile of
+  leaked `pdr-*` VMs from previous runs, stop+rm them by hand
+  (`container stop <id> && container rm <id>`) before rerunning, since a
+  large pile can cause IP/resource exhaustion that looks like test flakiness.
 
 ## Script flags
 
