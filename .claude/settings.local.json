@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/find-all-package.ts)",
+      "Bash(yq -P)"
+    ]
+  }
+}
