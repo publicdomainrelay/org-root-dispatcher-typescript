@@ -73,14 +73,6 @@ jobs:
           cd ../did-key-associator && deno run -A build.ts
           tar -czf ../dist/did-key-associator.tar.gz -C dist .
 
-      - name: Create platform archive
-        run: |
-          if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
-            zip -j dist/binaries-${{ matrix.suffix }}.zip dist/*.exe
-          else
-            tar -czf dist/binaries-${{ matrix.suffix }}.tar.gz -C dist $(ls dist | grep -v '\.tar\.gz$' | grep -v '\.zip$')
-          fi
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
