@@ -48,6 +48,17 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox deno-worker-sandbox/hono-sandbox/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static typescript-helpers/hono-http-static/mod.ts
 
+      - name: Build SPAs
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          # Compute SPA
+          deno run -A compute-spa/build.ts
+          tar -czf dist/compute-spa.tar.gz -C compute-spa/dist .
+
+          # DID Key Associator
+          deno run -A did-key-associator/build.ts
+          tar -czf dist/did-key-associator.tar.gz -C did-key-associator/dist .
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
