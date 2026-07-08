@@ -50,6 +50,18 @@ jobs:
         with:
           tag_name: latest
           name: Latest Release
-          body: "Automated release from main branch."
+          body: |
+            Latest build from `main` branch.
+
+            ### Platform archives
+            - `binaries-linux-x64.tar.gz` — Linux x86_64 (14 binaries)
+            - `binaries-windows-x64.zip` — Windows x86_64 (14 binaries, .exe)
+            - `binaries-macos-arm64.tar.gz` — macOS Apple Silicon (14 binaries)
+
+            ### SPAs
+            - `compute-spa.tar.gz` — Compute SPA browser bundle
+            - `did-key-associator.tar.gz` — DID Key Associator browser bundle
+
+            Built from commit: ${{ github.sha }}
           files: ./release-artifacts/**/*
           fail_on_unmatched_files: false

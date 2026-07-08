@@ -13,10 +13,13 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact-suffix: linux-x64
+            suffix: linux-x64
+          - os: ubuntu-latest
+            target: x86_64-pc-windows-msvc
+            suffix: windows-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact-suffix: macos-arm64
+            suffix: macos-arm64
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -33,34 +36,49 @@ jobs:
       - name: Compile binaries
         run: |
           mkdir -p dist
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder atproto-market/hono-bidder/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh atproto-market/request-vm-ssh/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway atproto-market/hono-compute-contract-gateway/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy atproto-market/hono-policy/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc atproto-market/hono-plc/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds hono-pds/main.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer did-key-relay/hono-did-key-relay-relayer/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber did-key-relay/hono-did-key-relay-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel did-key-relay/hono-did-key-relay-tunnel/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider hono-compute-provider/hono-compute-provider/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno deno-worker-sandbox/hono-compute-deno/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox deno-worker-sandbox/hono-sandbox/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static typescript-helpers/hono-http-static/mod.ts
+          set -e
+          BINS="\
+            atproto-market/hono-bidder/mod.ts hono-bidder \
+            atproto-market/request-vm-ssh/mod.ts request-vm-ssh \
+            atproto-market/hono-compute-contract-gateway/mod.ts compute-contract-gateway \
+            atproto-market/hono-policy/mod.ts hono-policy \
+            atproto-market/hono-plc/mod.ts hono-plc \
+            hono-pds/main.ts hono-pds \
+            did-key-relay/hono-did-key-relay-relayer/mod.ts hono-did-key-relay-relayer \
+            did-key-relay/hono-did-key-relay-subscriber/mod.ts hono-did-key-relay-subscriber \
+            did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts tunnel-subscriber \
+            did-key-relay/hono-did-key-relay-tunnel/mod.ts tunnel \
+            hono-compute-provider/hono-compute-provider/mod.ts hono-compute-provider \
+            deno-worker-sandbox/hono-compute-deno/mod.ts hono-compute-deno \
+            deno-worker-sandbox/hono-sandbox/mod.ts hono-sandbox \
+            typescript-helpers/hono-http-static/mod.ts hono-http-static"
+          echo "$BINS" | while read -r src name; do
+            [ -z "$src" ] && continue
+            extsuffix=""
+            [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ] && extsuffix=".exe"
+            deno compile --allow-all --target ${{ matrix.target }} \
+              --output "dist/${name}${extsuffix}" "$src"
+          done
 
       - name: Build SPAs
         if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
-          # Compute SPA (build.ts uses relative paths, must run from its dir)
           cd compute-spa && deno run -A build.ts
           tar -czf ../dist/compute-spa.tar.gz -C dist .
-
-          # DID Key Associator
           cd ../did-key-associator && deno run -A build.ts
           tar -czf ../dist/did-key-associator.tar.gz -C dist .
+
+      - name: Create platform archive
+        run: |
+          if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
+            zip -j dist/binaries-${{ matrix.suffix }}.zip dist/*.exe
+          else
+            tar -czf dist/binaries-${{ matrix.suffix }}.tar.gz -C dist $(ls dist | grep -v '\.tar\.gz$' | grep -v '\.zip$')
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: deno-binaries-${{ matrix.artifact-suffix }}
-          path: dist/*
+          name: deno-binaries-${{ matrix.suffix }}
+          path: |
+            dist/*
