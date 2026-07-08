@@ -31,11 +31,8 @@ jobs:
       - name: Flatten artifacts
         run: |
           mkdir -p release-flat
-          for dir in ./release-artifacts/*/; do
-            for f in "$dir"dist/*; do
-              [ -f "$f" ] && cp "$f" release-flat/
-            done
-          done
+          find ./release-artifacts -type f -exec cp {} release-flat/ \;
+          echo "Release files:"
           ls -la release-flat/
 
       - name: Move latest tag
