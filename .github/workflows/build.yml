@@ -56,10 +56,10 @@ jobs:
             [ -z "$src" ] && continue
             if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
               deno compile --allow-all --target ${{ matrix.target }} \
-                --output "dist/${name}.exe" "$src"
+                --output "dist/${name}-${{ matrix.suffix }}.exe" "$src"
             else
               deno compile --allow-all --target ${{ matrix.target }} \
-                --output "dist/${name}" "$src"
+                --output "dist/${name}-${{ matrix.suffix }}" "$src"
             fi
           done <<BINS
           $BINS

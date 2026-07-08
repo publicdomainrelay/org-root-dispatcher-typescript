@@ -28,6 +28,13 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release-flat
+          find ./release-artifacts -type f -not -name '*.tar.gz' -exec cp {} release-flat/ \;
+          find ./release-artifacts -name '*.tar.gz' -exec cp {} release-flat/ \;
+          ls -la release-flat/
+
       - name: Move latest tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,5 +70,5 @@ jobs:
             - `did-key-associator.tar.gz` — DID Key Associator browser bundle
 
             Built from commit: ${{ github.sha }}
-          files: ./release-artifacts/**/*
+          files: release-flat/*
           fail_on_unmatched_files: false
