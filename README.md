@@ -748,19 +748,21 @@ cd deno-macos-runner-desktop && bash scripts/deploy.sh    # Tray app
 
 Prebuilt binaries and SPA bundles from every push to `main`. Two release tracks:
 
-### `latest` — 16 CLI binaries + SPAs
+### `latest` — 14 binaries × 3 platforms + 2 SPAs (44 assets)
+
+Every binary is built for **Linux x86_64**, **Windows x86_64**, and **macOS ARM64**.
+Names use the pattern `<name>-<platform>` (`.exe` appended on Windows).
 
 ```bash
-# Download a specific binary
+# Download a specific binary for your platform
 curl -fsSLo request-vm-ssh \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-linux-x64
+curl -fsSLo request-vm-ssh.exe \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-windows-x64.exe
+curl -fsSLo request-vm-ssh \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-macos-arm64
 chmod +x request-vm-ssh
 ./request-vm-ssh --help
-
-# Download all (Linux x86_64 tar.gz)
-curl -fsSLo binaries-linux.tar.gz \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/binaries-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf binaries-linux.tar.gz
 
 # Download SPAs
 curl -fsSLo compute-spa.tar.gz \
@@ -768,28 +770,28 @@ curl -fsSLo compute-spa.tar.gz \
 curl -fsSLo did-key-associator.tar.gz \
   https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/did-key-associator.tar.gz
 
-# Or list all assets
+# List all 44 assets
 gh release view latest --repo publicdomainrelay/org-root-dispatcher-typescript
 ```
 
-| Binary | Use |
-|--------|-----|
-| `request-vm-ssh` | Requester CLI — posts RFP, collects bids, SSHs into provisioned VM |
-| `hono-bidder` | Bidder CLI — provides compute (container/VM/worker), responds to RFPs |
-| `compute-contract-gateway` | Gateway HTTP API — request compute via XRPC endpoints |
-| `hono-policy` | Policy engine — evaluates fulfillment policies |
-| `hono-plc` | PLC directory — ephemeral did:plc directory for local dev |
-| `hono-pds` | PDS — AT Protocol Personal Data Server |
-| `hono-did-key-relay-relayer` | Relay dispatcher — WebSocket tunnel routing by SNI subdomain |
-| `hono-did-key-relay-subscriber` | Relay subscriber — connect PDS/relay through dispatcher |
-| `tunnel-subscriber` | In-VM agent — bridges relay tunnel to local sshd |
-| `tunnel` | SSH ProxyCommand — pipes stdin/stdout through relay WebSocket |
-| `hono-compute-provider` | Compute provider — provisions local containers or DigitalOcean droplets |
-| `hono-compute-deno` | Deno worker XRPC — manifest store + instance runner |
-| `hono-sandbox` | Ephemeral sandbox — execute code in isolated Deno workers |
-| `hono-http-static` | Static file server |
-| `compute-spa.tar.gz` | Browser SPA — request VMs, view saved VMs, access terminals |
-| `did-key-associator.tar.gz` | Browser SPA — associate did:key identifiers with AT Protocol account |
+| Binary | Linux | Windows | macOS | Use |
+|--------|-------|---------|-------|-----|
+| `request-vm-ssh` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Requester CLI — posts RFP, collects bids, SSHs into VM |
+| `hono-bidder` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Bidder CLI — provides compute, responds to RFPs |
+| `compute-contract-gateway` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Gateway HTTP API |
+| `hono-policy` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Policy engine |
+| `hono-plc` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | PLC directory — ephemeral did:plc |
+| `hono-pds` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | PDS — AT Protocol Personal Data Server |
+| `hono-did-key-relay-relayer` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay dispatcher |
+| `hono-did-key-relay-subscriber` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay subscriber |
+| `tunnel-subscriber` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | In-VM tunnel agent |
+| `tunnel` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | SSH ProxyCommand over relay |
+| `hono-compute-provider` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Compute provider (local/DO) |
+| `hono-compute-deno` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Deno worker XRPC server |
+| `hono-sandbox` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Ephemeral sandbox |
+| `hono-http-static` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Static file server |
+| `compute-spa.tar.gz` | — | — | — | Browser SPA bundle |
+| `did-key-associator.tar.gz` | — | — | — | DID Key Associator SPA bundle |
 
 ### `desktop-latest` — macOS tray app
 
