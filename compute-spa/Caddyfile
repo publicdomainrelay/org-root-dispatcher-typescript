@@ -1,0 +1,8 @@
+compute.fedfork.com {
+	root * /var/www/compute-spa
+	encode gzip
+	header {
+		Cache-Control "no-cache"
+	}
+	file_server
+}

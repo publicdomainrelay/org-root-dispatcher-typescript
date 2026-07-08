@@ -1,0 +1,19 @@
+{
+  "client_id": "https://compute.fedfork.com/oauth-client-metadata.json",
+  "dpop_bound_access_tokens": true,
+  "application_type": "web",
+  "redirect_uris": [
+    "https://compute.fedfork.com"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "scope": "atproto repo:com.publicdomainrelay.temp.compute.vm?action=create repo:com.publicdomainrelay.temp.market.submitRfp?action=create repo:com.publicdomainrelay.temp.market.submitAccept?action=create repo:com.publicdomainrelay.temp.badgeBlueKeys?action=create repo:com.fedproxy.rbac?action=create repo:com.fedproxy.sshPublicKey?action=create",
+  "token_endpoint_auth_method": "none",
+  "client_name": "Compute — publicdomainrelay",
+  "client_uri": "https://compute.fedfork.com"
+}
