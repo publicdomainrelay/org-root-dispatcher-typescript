@@ -519,6 +519,14 @@ cd atproto-relay
 deno run -A hono-atproto-relay/mod.ts --port 2584
 ```
 
+### PLC Directory
+
+```bash
+cd atproto-market
+deno run -A hono-plc/mod.ts --port 2587 --hostname 0.0.0.0
+```
+Options: `--port` (2587), `--hostname` (127.0.0.1). Env vars: `PORT`, `HOSTNAME`. Serves `did:plc` directory — POST to register, GET to resolve. In-memory store (ephemeral).
+
 ### Desktop Bidder (macOS tray)
 
 ```bash

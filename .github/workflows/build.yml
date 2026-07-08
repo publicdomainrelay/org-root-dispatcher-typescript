@@ -37,6 +37,7 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh atproto-market/request-vm-ssh/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway atproto-market/hono-compute-contract-gateway/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc atproto-market/hono-plc/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds hono-pds/main.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer did-key-relay/hono-did-key-relay-relayer/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber did-key-relay/hono-did-key-relay-subscriber/mod.ts

@@ -29,9 +29,13 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Move latest tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f latest
-          git push origin latest -f
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git latest -f
 
       - name: Delete existing release
         env:

@@ -30,6 +30,9 @@ jobs:
     - name: Tray app
       continue-on-error: true
       run: ssh deploy@tray.fedfork.com 'cd deno-macos-runner-desktop && bash scripts/deploy.sh'
+    - name: PLC directory
+      continue-on-error: true
+      run: ssh deploy@plc.fedfork.com 'cd atproto-market && deno run -A hono-plc/mod.ts --hostname plc.fedfork.com'
     - name: Market relay
       continue-on-error: true
       run: ssh deploy@reg.market.fedfork.com 'cd atproto-relay && deno run -A hono-atproto-relay/mod.ts --hostname reg.market.fedfork.com'

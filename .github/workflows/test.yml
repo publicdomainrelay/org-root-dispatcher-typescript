@@ -39,4 +39,5 @@ jobs:
           deno check --config atproto-market/deno.json atproto-market/hono-bidder/mod.ts
           deno check --config atproto-market/deno.json atproto-market/hono-compute-contract-gateway/mod.ts
           deno check --config atproto-market/deno.json atproto-market/hono-policy/mod.ts
+          deno check --config atproto-market/deno.json atproto-market/hono-plc/mod.ts
           deno check --config hono-pds/deno.json hono-pds/main.ts

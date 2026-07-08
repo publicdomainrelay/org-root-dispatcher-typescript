@@ -41,6 +41,7 @@ Compiles 13 binaries on every push to `main`. Matrix build across:
 - `hono-bidder` — Bidder CLI
 - `compute-contract-gateway` — Gateway CLI
 - `hono-policy` — Policy engine CLI
+- `hono-plc` — PLC directory server
 - `hono-pds` — PDS server
 - `hono-did-key-relay-relayer` — Relay dispatcher
 - `hono-did-key-relay-subscriber` — Relay subscriber client
@@ -68,6 +69,7 @@ Uses opkssh (OpenPubkey SSH) for keyless SSH to production hosts. Each deploy st
 | Compute SPA | `deploy@compute.fedfork.com` | `bash scripts/deploy.sh` |
 | QR associator | `deploy@qr.fedfork.com` | `bash scripts/deploy.sh` |
 | Tray app | `deploy@tray.fedfork.com` | `bash scripts/deploy.sh` |
+| PLC directory | `deploy@plc.fedfork.com` | `deno run -A hono-plc/mod.ts` |
 | Market relay | `deploy@reg.market.fedfork.com` | `deno run -A hono-atproto-relay/mod.ts` |
 | JSR registry | `deploy@jsr.fedfork.com` | `deno run -A hono-package-registry/main.ts` |
 
