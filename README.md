@@ -342,10 +342,21 @@ deno run -A hono-atproto-relay/mod.ts --port 2584
 
 ```bash
 cd deno-macos-runner-desktop
+
+# Build .app bundle
 ./rebuild.sh
+# or directly:
+deno desktop --no-check --allow-all hono-macos-runner-desktop/mod.ts
+
+# Override config
+CONFIG_PATH_HONO_MACOS_RUNNER_DESKTOP=/path/to/config.json \
+  deno desktop --no-check --allow-all hono-macos-runner-desktop/mod.ts
+
 # Log tail:
 tail -n 9999999 -F /tmp/deno-macos-runner-desktop.log | jq -rR --unbuffered '(fromjson? // .)'
 ```
+Uses `deno desktop` (not `deno run` — requires Deno Desktop runtime for `Deno.BrowserWindow`, `Deno.Tray`, `Deno.TrayPanel`).
+Options: `--service-name`, `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host` (xrpc.fedproxy.com), `--plc-directory-url`, `--firehose-url`, `--offering-refresh-sec` (300), `--skip-market`.
 
 ### Desktop Bidder (cross-platform web UI)
 
@@ -383,6 +394,24 @@ deno run -A hono-did-key-relay-tunnel/mod.ts \
   --dispatcher-host xrpc.fedproxy.com --subdomain <subdomain>
 ```
 No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host` (required), `--subdomain` (required). Pipes stdin/stdout through relay WebSocket to guest sshd.
+
+### Tunnel Subscriber (in-VM agent)
+
+```bash
+cd did-key-relay
+
+# Run inside VM — bridges relay tunnel to local sshd
+deno run -A hono-did-key-relay-tunnel-subscriber/mod.ts \
+  --dispatcher-host xrpc.fedproxy.com \
+  --aud-host xrpc.fedproxy.com \
+  --private-key-hex <64-char-hex> \
+  --target-host 127.0.0.1 --target-port 22
+
+# Compiled binary (for VM image)
+deno compile -A hono-did-key-relay-tunnel-subscriber/mod.ts
+./tunnel-subscriber --dispatcher-host <host> --aud-host <host> --private-key-hex <hex>
+```
+No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host` (required), `--aud-host` (required), `--private-key-hex` (required), `--target-host` (127.0.0.1), `--target-port` (22). Typically deployed via cloud-init `buildTunnelUserData()` as a systemd service, not run manually.
 
 ### Deno Worker Sandbox
 
@@ -498,6 +527,12 @@ codegraph explore "discoverBiddersFromRelay offering refresh listReposByCollecti
 
 # Git status across all repos
 deno run -A scripts/poly-repo-status-report.ts
+
+# Commit and push across all repos
+deno run -A scripts/commit-and-push-all.ts
+
+# Fake embeddings server (needed by test-all.ts)
+deno run -A scripts/fake-embeddings-server.ts
 
 # Update submodules
 deno run -A scripts/submodules-to-main.ts
