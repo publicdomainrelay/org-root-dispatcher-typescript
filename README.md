@@ -39,7 +39,7 @@ context-aware CI system that learns with you.
 |-----------|--------|
 | Communication (PDS, firehose, DIDs, records) | 100% |
 | Compute Contract lifecycle (RFP→bid→accept→provision) | 100% |
-| Fulfillment policies (only_me, direct_network) | 80% (lexicons+plumbing built; evaluate() not wired) |
+| Fulfillment policies (only_me, direct_network) | 80% |
 | SCITT transparency service | 100% (external repo) |
 | Record attestation (badge.blue) | 100% |
 | OIDC workload identity | 100% |
@@ -55,28 +55,44 @@ Architecture as code: `open-architecture/lib/abc/alice/mod.ts` — `whatAliceIs(
 codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
 ```
 
-See `open-architecture/STATUS_REPORT.md` for the full stub→implementation map.
+See `open-architecture/STATUS_REPORT.md` for stub→implementation map.
+See `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` for full architecture deep-dive.
+
+---
 
 ## Quick Start
+
+### Prerequisites
+
+```bash
+# macOS
+container system start
+
+# Linux
+sudo systemctl start docker
+```
 
 ### 1. Run a bidder (provides compute)
 
 ```bash
-# Desktop tray app (macOS) — easiest
+# Desktop tray app (macOS)
 cd deno-macos-runner-desktop && ./rebuild.sh
-# → Tray icon → Connect ATProto identity → Bidder starts with "Only Me" scope
-```
-Then link your ATProto identity.
 
-```bash
-# Headless (cross-platform)
+# Headless (cross-platform) — local container mode
 cd atproto-market
 deno run -A hono-bidder/mod.ts \
-  --relay-dispatcher-host xrpc.fedproxy.com \
-  --plc-directory-url https://plc.directory \
+  --accept-scope only_me \
+  --private-key-hex-path ~/Documents/bidder-private-key.hex \
+  --pds-state-path ~/Documents/bidder-pds-state.db \
+  --compute-provider-local
+
+# With explicit container mode
+deno run -A hono-bidder/mod.ts \
+  --accept-scope only_me \
+  --private-key-hex-path ~/Documents/bidder-private-key.hex \
+  --pds-state-path ~/Documents/bidder-pds-state.db \
   --compute-provider-local \
-  --compute-provider-local-container-mode container \
-  --serve-port 0
+  --compute-provider-local-container-mode container
 ```
 
 ### 2. Request a VM
@@ -84,9 +100,10 @@ deno run -A hono-bidder/mod.ts \
 ```bash
 cd atproto-market
 deno run -A request-vm-ssh/mod.ts \
-  --dispatcher-host xrpc.fedproxy.com \
-  --extra-bidder-dids did:plc:YOUR_BIDDER_DID \
   --policy-mode only_me \
+  --bid-window-sec 3 \
+  --private-key-hex-path ~/Documents/requester-private-key.hex \
+  --pds-state-path ~/Documents/requester-pds-state.db \
   --exec "echo hello && uname -a"
 ```
 
@@ -94,24 +111,425 @@ This posts a `compute.vm` record + signed `market.rfp`, collects bids,
 picks the winner, provisions the guest via cloud-init, and SSHs in through
 the websocket relay tunnel.
 
-### 3. SSH directly (no re-provision)
+### 3. Run everything locally (single process)
+
+```bash
+cd atproto-market
+deno run --allow-all compute-contract-full-flow/run_full_flow.ts
+```
+
+Starts dispatcher, fake PLC, bidder, requester — drives full RFP→bid→accept→provision→SSH in one process.
+
+### 4. SSH directly (no re-provision)
 
 ```
 ssh -o ProxyCommand='websocat --binary wss://<vmName>--<flat-did>.fedproxy.com' root@<vmName>--<flat-did>.fedproxy.com
 ```
 
-## Repos
+---
 
-| Repo | Purpose |
+## All Repos
+
+| # | Repo | GitHub | Packages | Role |
+|---|------|--------|----------|------|
+| 1 | `atproto-market/` | `publicdomainrelay/atproto-market` | 48 | Market engine: RFP, bid, accept, requester, bidder, gateway, policy, settlement |
+| 2 | `hono-compute-provider/` | `publicdomainrelay/compute-provider-digitalocean` | 16 | Compute provisioning: local containers, QEMU VMs, DigitalOcean droplets, OIDC, RBAC |
+| 3 | `did-key-relay/` | `publicdomainrelay/did-key-relay` | 11 | WebSocket relay: dispatcher, tunnel, subscriber, SNI subdomain routing |
+| 4 | `typescript-helpers/` | `publicdomainrelay/typescript-helpers` | 14 | Cross-repo shared: logger, serve, CLI args, firehose watchers, hostname helpers |
+| 5 | `hono-pds/` | `publicdomainrelay/hono-pds` | 4 | AT Protocol PDS: repo storage, MST, CBOR, CARv1, accounts, firehose |
+| 6 | `deno-worker-sandbox/` | `publicdomainrelay/deno-hono-sandbox` | 10 | Deno Worker sandbox: ephemeral compute, manifest store, instance runner |
+| 7 | `deno-macos-runner-desktop/` | `publicdomainrelay/deno-macos-runner-desktop` | 16 | Desktop tray bidder: OAuth, device keys, badge blue keys, secret stores |
+| 8 | `atproto-relay/` | `publicdomainrelay/atproto-relay` | 5 | Collection-indexing firehose relay: requestCrawl, listReposByCollection, subscribeRepos |
+| 9 | `hono-jsr/` | `publicdomainrelay/hono-package-registry` | 6 | JSR-compatible package registry: local FS, remote git, composite stores |
+| 10 | `open-architecture/` | `publicdomainrelay/open-architecture` | 8 | Docs-as-code: Alice stubs, STATUS_REPORT, COMPUTE_CONTRACT_FLOW_MAP |
+| 11 | `compute-contract/` | `publicdomainrelay/compute-contract` | — | Lexicon schemas: compute.vm, market.rfp/bid/accept/receipt |
+| 12 | `compute-spa/` | `publicdomainrelay/org-root-dispatcher-typescript` | — | Browser SPA: request-vm-page, fedproxy relay client |
+| 13 | `compute-contract-full-flow/` | same as #12 | — | Single-process e2e integration test |
+| 14 | `did-key-associator/` | `publicdomainrelay/did-key-associator` | — | QR code DID association webapp |
+| 15 | `atproto-reverse-proxy/` | `publicdomainrelay/atproto-reverse-proxy` | — | Go Caddy reverse proxy (fedproxy TLS termination) |
+
+---
+
+## Infrastructure Services
+
+These run independently, providing the backbone for the market.
+
+### Dispatcher (did-key-relay)
+
+```bash
+cd did-key-relay
+deno run -A hono-did-key-relay-relayer/mod.ts \
+  --hostname localhost --port 5555
+```
+Options: `--hostname` (default xrpc.fedproxy.com), `--port` (default 8080), `--relay-timeout-ms` (30000), `--nonce-ttl-ms` (60000), `--additional-hosts`, `--unix-socket`.
+
+### PDS (AT Protocol Personal Data Server)
+
+```bash
+cd hono-pds
+deno run -A main.ts --port 2583
+
+# With persisted identity + did:web services
+deno run -A main.ts \
+  --port 2583 \
+  --private-key-hex <64-char-hex> \
+  --public-hostname pds.example.com \
+  --crawlers "https://reg.market.fedfork.com" \
+  --did-web-services '[{"id":"pdr_temp_market","type":"PDRTempMarket"}]'
+```
+Options: `--port` (2583), `--hostname` (127.0.0.1), `--private-key-hex`, `--did-web-services` (JSON), `--public-hostname`, `--crawlers`.
+
+### Market Relay (atproto-relay)
+
+```bash
+cd atproto-relay
+deno run -A hono-atproto-relay/mod.ts --port 2584
+
+# Local dev (patches fetch+WS for *.localhost → dispatcher)
+deno run -A hono-atproto-relay/mod.ts \
+  --port 2584 --local-dev-relay-port 5555
+```
+Options: `--port` (2584), `--hostname` (127.0.0.1), `--local-dev-relay-port`.
+Serves: `requestCrawl`, `listReposByCollection`, `subscribeRepos`.
+
+### JSR Package Registry
+
+```bash
+cd hono-jsr
+deno run -A hono-package-registry/main.ts --port 5556
+
+# Serve polyrepo packages to guest containers
+deno run -A hono-package-registry/main.ts \
+  --store local --base-dir .. --port 5556 --no-passthrough
+```
+Options: `--store` (local/git), `--base-dir` (./packages), `--git-url`, `--port` (8080), `--passthrough`/`--no-passthrough`, `--fallback-version` (0.0.0).
+
+---
+
+## Full Local Dev Stack (6 terminals)
+
+```
+T1: dispatcher  →  did-key-relay/hono-did-key-relay-relayer --hostname localhost --port 5555
+T2: relay       →  atproto-relay/hono-atproto-relay --port 2584 --local-dev-relay-port 5555
+T3: PDS         →  hono-pds main.ts --port 2583
+T4: JSR         →  hono-jsr hono-package-registry/main.ts --base-dir .. --port 5556 --no-passthrough
+T5: bidder      →  atproto-market/hono-bidder --compute-provider-local --relay-dispatcher-host localhost:5555
+T6: requester   →  atproto-market/request-vm-ssh --dispatcher-host localhost:5555 --bid-window-sec 3
+```
+
+Or one process: `deno run --allow-all atproto-market/compute-contract-full-flow/run_full_flow.ts`
+
+---
+
+## All CLI Commands
+
+### Requester (`request-vm-ssh`)
+
+```bash
+cd atproto-market
+
+# Minimal
+deno run -A request-vm-ssh/mod.ts --policy-mode only_me --bid-window-sec 3
+
+# Full
+deno run -A request-vm-ssh/mod.ts \
+  --policy-mode only_me \
+  --bid-window-sec 10 \
+  --private-key-hex-path ~/Documents/requester-private-key.hex \
+  --pds-state-path ~/Documents/requester-pds-state.db \
+  --exec "hostname; echo PASS; id -un" \
+  --keep-vm
+
+# Skip SSH (testing only)
+deno run -A request-vm-ssh/mod.ts --skip-ssh --keep-vm --bid-window-sec 3
+```
+
+### Bidder (`hono-bidder`)
+
+```bash
+cd atproto-market
+
+# Minimal local
+deno run -A hono-bidder/mod.ts \
+  --compute-provider-local \
+  --accept-scope only_me
+
+# Production (DO + firehose)
+deno run -A hono-bidder/mod.ts \
+  --relay-dispatcher-host xrpc.fedproxy.com \
+  --plc-directory-url https://plc.directory \
+  --compute-provider-local \
+  --compute-provider-local-container-mode container \
+  --compute-provider-deno-worker \
+  --worker-permission-mode allow-net \
+  --rfp-firehose-mode jetstream \
+  --rfp-firehose-url wss://jetstream.example.com/subscribe \
+  --serve-port 0 \
+  --offering-refresh-sec 300
+```
+
+### Gateway (`hono-compute-contract-gateway`)
+
+```bash
+cd atproto-market
+deno run -A hono-compute-contract-gateway/mod.ts \
+  --port 2585 \
+  --dispatcher-host xrpc.fedproxy.com \
+  --fedproxy-host fedproxy.com
+```
+
+### Policy Engine (`hono-policy`)
+
+```bash
+cd atproto-market
+deno run -A hono-policy/mod.ts --port 2586 --policy allow-net
+
+# Strict auth mode
+deno run -A hono-policy/mod.ts --port 2586 --policy "allow-net,deny-all" --strict-auth
+```
+
+### Compute Provider (standalone)
+
+```bash
+cd hono-compute-provider
+deno run -A hono-compute-provider/mod.ts --provider local --port 8080
+
+# DigitalOcean mode
+DO_TOKEN=xxx deno run -A hono-compute-provider/mod.ts --provider digitalocean
+```
+
+### QEMU Standalone
+
+```bash
+cd hono-compute-provider
+# Build VM image
+deno run -A hono-qemu-standalone/mod.ts --subcommand build --distro ubuntu
+
+# Run VM
+deno run -A hono-qemu-standalone/mod.ts --subcommand run --distro ubuntu \
+  --user-data-file ./cloud-init.yaml
+```
+
+### PDS
+
+```bash
+cd hono-pds
+deno run -A main.ts --port 2583
+```
+
+### JSR Registry
+
+```bash
+cd hono-jsr
+deno run -A hono-package-registry/main.ts --port 8080
+```
+
+### Dispatcher
+
+```bash
+cd did-key-relay
+deno run -A hono-did-key-relay-relayer/mod.ts --hostname localhost --port 5555
+```
+
+### Market Relay
+
+```bash
+cd atproto-relay
+deno run -A hono-atproto-relay/mod.ts --port 2584
+```
+
+### Desktop Bidder (macOS tray)
+
+```bash
+cd deno-macos-runner-desktop
+./rebuild.sh
+# Log tail:
+tail -n 9999999 -F /tmp/deno-macos-runner-desktop.log | jq -rR --unbuffered '(fromjson? // .)'
+```
+
+### Desktop Bidder (cross-platform web UI)
+
+```bash
+cd deno-macos-runner-desktop
+deno run -A hono-desktop/mod.ts \
+  --port 8080 \
+  --dispatcher-host xrpc.fedproxy.com \
+  --storage-dir ~/Documents/bidder-state
+```
+Options: `--port` (0), `--hostname` (0.0.0.0), `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host`, `--plc-directory-url`, `--offering-refresh-sec` (300), `--skip-market`, `--start-bidder`, `--private-key-hex`. Env vars: `PORT`, `HOSTNAME`, `SERVICE_NAME`, `STORAGE_DIR`, `STATE_PATH`, `OAUTH_CLIENT_ID`, `OAUTH_REDIRECT_URI`, `RELAY_DISPATCHER_HOST`, `PLC_DIRECTORY_URL`, `FIREHOSE_URL`, `OFFERING_REFRESH_SEC`, `SKIP_MARKET`.
+
+### Relay Subscriber Client
+
+```bash
+cd did-key-relay
+deno run -A hono-did-key-relay-subscriber/mod.ts \
+  --dispatcher-host xrpc.fedproxy.com \
+  --atproto-handle user.bsky.social \
+  --atproto-password xxxx
+```
+Options: `--dispatcher-host`, `--atproto-pds` (https://bsky.social), `--atproto-handle`, `--atproto-password`, `--save-keypair`, `--load-keypair`, `--keypair-path` (./keypair.json), `--write-proxy-ref-http-to-path`.
+
+### Tunnel Client (SSH ProxyCommand)
+
+```bash
+cd did-key-relay
+
+# As SSH ProxyCommand
+ssh -o ProxyCommand='deno run -A hono-did-key-relay-tunnel/mod.ts \
+  --dispatcher-host xrpc.fedproxy.com --subdomain <sub>' root@vm
+
+# Direct tunnel
+deno run -A hono-did-key-relay-tunnel/mod.ts \
+  --dispatcher-host xrpc.fedproxy.com --subdomain <subdomain>
+```
+No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host` (required), `--subdomain` (required). Pipes stdin/stdout through relay WebSocket to guest sshd.
+
+### Deno Worker Sandbox
+
+```bash
+cd deno-worker-sandbox
+
+# Ephemeral sandbox (execute code in isolated worker)
+deno run -A hono-sandbox/mod.ts --port 2584
+
+# Compute XRPC server (manifest store + instance runner)
+deno run -A hono-compute-deno/mod.ts \
+  --port 2585 \
+  --permission-mode deny-all \
+  --attestation-key-path ./attestation-key.jwk
+```
+Sandbox options: `--port` (2584), `--hostname` (127.0.0.1), `--timeout-ms`. Env vars: `PORT`, `HOSTNAME`, `SANDBOX_TIMEOUT_MS`.
+Compute-deno options: `--port` (2585), `--hostname` (127.0.0.1), `--unix-socket`, `--pds-url`, `--atproto-handle`, `--atproto-password`, `--attestation-key-path`, `--timeout-ms`, `--permission-mode` (deny-all), `--policy-handler-built-in`, `--relay`, `--relay-dispatcher-host`. Env vars: `PORT`, `HOSTNAME`, `UNIX_SOCKET`, `PDS_URL`, `ATPROTO_HANDLE`, `ATPROTO_PASSWORD`, `ATTESTATION_KEY_PATH`, `COMPUTE_DENO_TIMEOUT_MS`, `PERMISSION_MODE`, `POLICY_HANDLER_BUILT_IN`, `RELAY`, `RELAY_DISPATCHER_HOST`.
+
+### Static File Server
+
+```bash
+cd typescript-helpers
+
+# Serve current directory
+deno run -A hono-http-static/mod.ts --port 8080 --serve-path .
+
+# Custom path
+deno run -A hono-http-static/mod.ts --port 8081 --serve-path /var/www
+```
+Options: `--port` (8080), `--serve-path` (.), `--log-level` (info). Env vars: `PORT`, `SERVE_PATH`, `MIN_LOG_LEVEL`.
+
+---
+
+## Testing
+
+### All tests across polyrepo
+
+```bash
+deno run -A scripts/test-all.ts
+```
+
+### Per-repo test tasks
+
+```bash
+cd atproto-market
+deno test --allow-all test/bidder_container_integration_test.ts
+deno test --allow-all test/gateway_request_vm_integration_test.ts
+deno test --allow-all test/policy_remote_test.ts
+
+cd hono-compute-provider
+deno task test:all
+
+cd hono-pds && deno task test
+cd deno-worker-sandbox && deno task test
+cd typescript-helpers && deno task test
+cd hono-jsr && deno task test
+```
+
+### Prod tests (conditional — probes real infra)
+
+```bash
+DENO_TEST_PROD=1 deno test --allow-all atproto-market/test/bidder_prod_integration_test.ts
+```
+
+---
+
+## Container Management
+
+```bash
+# macOS container runtime
+container system start
+container logs -f $(container list --format json | jq -r 'sort_by(.configuration.creationDate) | last | .id')
+container kill $(container list -qa); container rm $(container list -qa)
+
+# Docker
+docker system start
+docker kill $(docker ps -qa); docker rm $(docker ps -qa)
+```
+
+---
+
+## Codegraph
+
+Single index at org root: 1,208 files, 16,307 nodes, 46,838 edges.
+
+```bash
+# Full architecture walk
+codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
+
+# Requester flow
+codegraph explore "runComputeContract createRequesterPDS discoverBiddersFromRelay"
+
+# Bidder + provisioning
+codegraph explore "createMarketBidder createVmBidderCallbacks provisionLocal runContainer"
+
+# Relay tunnel
+codegraph explore "createXrpcRelay createSubscriber startTunnel tunnelOverRelay"
+
+# Attestation
+codegraph explore "verifyRecordSignatures verifyRemoteProof createAttestationCid"
+
+# Firehose discovery
+codegraph explore "discoverBiddersFromRelay offering refresh listReposByCollection"
+```
+
+---
+
+## Package Discovery & Git
+
+```bash
+# List all packages
+./scripts/find-all-package.ts | python3 -c "import sys,json; [print(p['name'], p['path']) for p in json.load(sys.stdin)]"
+
+# Git status across all repos
+deno run -A scripts/poly-repo-status-report.ts
+
+# Update submodules
+deno run -A scripts/submodules-to-main.ts
+```
+
+---
+
+## Deploy (production)
+
+```bash
+# Deploy all services
+deno run -A scripts/install-prod.ts
+
+# Individual deploys
+cd atproto-reverse-proxy && bash scripts/deploy.sh       # fedproxy
+cd compute-spa && bash scripts/deploy.sh                  # SPA
+cd did-key-associator && bash scripts/deploy.sh           # QR associator
+cd deno-macos-runner-desktop && bash scripts/deploy.sh    # Tray app
+```
+
+---
+
+## Key Files
+
+| File | Purpose |
 |------|---------|
-| `atproto-market/` | Market engine: RFP, bid, accept, requester, bidder, policies |
-| `hono-compute-provider/` | Compute provisioning: local containers, DigitalOcean droplets, OIDC/RBAC |
-| `did-key-relay/` | XRPC relay: WebSocket tunnel, subscriber, dispatcher |
-| `deno-macos-runner-desktop/` | macOS desktop tray app: bidder UI, OAuth, device keys |
-| `hono-pds/` | AT Protocol Personal Data Server (PDS) |
-| `open-architecture/` | Docs-as-code architecture blueprint |
-| `codebase-rag-proxy/` | Codebase RAG proxy for LLM integration |
-| `typescript-helpers/` | Cross-repo shared utilities |
+| `CLAUDE.md` | Project-wide coding standards (ABC layering, Deno+Hono+JSR patterns) |
+| `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` | Full architecture deep-dive (1121+ lines) |
+| `open-architecture/STATUS_REPORT.md` | Stub→implementation mapping |
+| `open-architecture/open_architecture_today.md` | Alice's reasoning (the blueprint) |
+| `compute-contract/lexicons/` | AT Protocol record schemas |
+| `compute-contract/README.md` | RFP lifecycle spec with diagrams |
 
 ## Architecture
 
