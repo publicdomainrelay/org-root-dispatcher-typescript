@@ -6,34 +6,214 @@ can request it, anyone can provide it, governed by verifiable trust (SCITT
 receipts, vouches, attestation chains) not cloud provider lock-in. Alice
 automates the trust decisions so humans don't have to.
 
-## Three layers
+## Actors
 
-### 1. RFP Compute Marketplace (the spine)
+| Actor | Role |
+|-------|------|
+| Alice (Requester) | Authors the **RFP** and later the **Accept**. Wants compute. |
+| Bob (Provider/Bidder) | Authors **Bids** and the **Receipt**. Has spare machines. |
+| Relay | WebSocket dispatcher + AT Protocol firehose proxy. Routes tunnels, indexes collections. |
+| PDS | Each actor's AT Protocol Personal Data Server holding their signed records. |
+| Firehose | `com.atproto.sync.subscribeRepos` / Jetstream — public commit stream carrying everything. |
 
-Requester posts `compute.vm` record + signed `market.rfp` → bidders bid →
-winner provisions VM/container via cloud-init `user_data` → requester reaches
-guest **only through the relay** (SSH over WebSocket tunnel).
+## RFP Compute Marketplace (the spine)
 
+All cross-record references use `com.atproto.repo.strongRef` (`{$type, uri, cid}`),
+so the chain is content-addressed end-to-end. Every record is signed (badge.blue
+inline attestations + remote proof CID binding).
+
+### Record graph
+
+```mermaid
+classDiagram
+    class RFP {
+      +strongRef payload  → VM
+    }
+    class VM {
+      +int cpus
+      +string mem
+      +string disk
+      +string network
+      +string role
+      +string user_data
+      +Location location?
+    }
+    class Bid {
+      +strongRef rfp      → RFP
+      +strongRef payload  → BidsX402
+      +strongRef config?  → WIFSimple
+    }
+    class BidsX402 {
+      +unknown cost
+      +string currency
+      +string frequency
+      +bool prepay
+      +string url
+    }
+    class Accept {
+      +strongRef rfp      → RFP
+      +strongRef bid      → Bid
+    }
+    class Receipt {
+      +strongRef rfp      → RFP
+      +strongRef bid      → Bid
+      +strongRef accept   → Accept
+    }
+    RFP --> VM : payload
+    Bid --> RFP : rfp
+    Bid --> BidsX402 : payload
+    Accept --> RFP : rfp
+    Accept --> Bid : bid
+    Receipt --> RFP : rfp
+    Receipt --> Bid : bid
+    Receipt --> Accept : accept
 ```
-requester → RFP → bid → accept → cloud-init → guest → relay tunnel → SSH
+
+### State machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> RFP_Open : Alice creates RFP + VM
+    RFP_Open --> Bidding : Firehose fan-out
+    Bidding --> Bidding : Provider creates Bid
+    Bidding --> Scoring : Listen window elapses
+    Scoring --> Rejected : no bid passes policy
+    Scoring --> Accepted : Alice creates Accept
+    Accepted --> Settling : Bob provisions + collects payment
+    Settling --> Settled : Bob creates Receipt
+    Rejected --> [*]
+    Settled --> [*]
 ```
 
-### 2. AT Protocol Communication
+### End-to-end sequence
 
-Everything is signed records on a PDS. Records flow through the firehose
-(`subscribeRepos` / Jetstream). AT Protocol is the federation transport —
-identities are DIDs, records are content-addressed, the firehose carries
-everything. Service auth, DID resolution, record CRUD, firehose watchers:
-all production.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Alice (requester)
+    participant AP as Alice PDS
+    participant FH as Firehose
+    participant B as Bob (provider)
+    participant BP as Bob PDS
+    participant VM as Provisioned VM
 
-### 3. Alice — the AI Maintainer
+    A->>AP: createRecord compute.vm
+    A->>AP: createRecord market.rfp { payload → vm }
+    AP-->>FH: commit (market.rfp)
+    FH-->>B: firehose event (market.rfp)
+    par bid window (N seconds)
+        B->>BP: createRecord bids.x402
+        B->>BP: createRecord market.bid { rfp, payload, config }
+        BP-->>FH: commit (market.bid)
+        FH-->>A: firehose (bid for my rfp)
+    end
+    A->>A: policy filter + scorer (lowest cost)
+    A->>AP: createRecord market.accept { rfp, bid }
+    A->>B: submitAccept XRPC
+    B->>VM: provision (cloud-init writes accept bundle)
+    B->>BP: createRecord market.receipt { rfp, bid, accept }
+    BP-->>A: receipt strongRef
+```
 
-Alice is both the architecture blueprint AND the target AI agent. She watches
-the firehose, evaluates trust (who vouched for whom? is the attestation chain
-intact?), runs supply chain scans, provisions compute, files fixes. She is a
-context-aware CI system that learns with you.
+### Step-by-step records (YAML — on wire these are JSON in ATProto repos)
 
-**The nervous system works. The brain is still docs-as-code stubs.**
+**1. Alice publishes the VM spec (payload of the RFP)**
+
+```yaml
+$type: com.publicdomainrelay.temp.compute.vm
+cpus: 2
+mem: 4G
+disk: 40G
+network: 500G
+role: my-cool-role
+user_data: |
+  #cloud-config
+  runcmd:
+    - [sh, -c, "echo hello > /var/log/hi"]
+location:
+  country: USA
+  region: west
+```
+
+**2. Alice publishes the RFP envelope**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.rfp
+payload:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.compute.vm/3mm3dolfolz2c
+  cid: bafyrei...vm
+```
+
+**3. Bob publishes the x402 pricing payload**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.bids.x402
+cost: 0.10
+currency: USDC
+frequency: hourly
+prepay: true
+url: https://compute-contract.bob.example/receipt
+```
+
+**4. Bob publishes the bid envelope**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.bid
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+payload:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bids.x402/3mm4...
+  cid: bafyrei...x402
+```
+
+**5. Alice publishes the Accept**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.accept
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+bid:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
+  cid: bafyrei...bid
+```
+
+**6. Bob publishes the Receipt**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.receipt
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+bid:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
+  cid: bafyrei...bid
+accept:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.accept/3mlagijgoeb23
+  cid: bafyrei...accept
+```
+
+### Authority and validation rules
+
+- `Accept.rfp.uri` MUST equal `Bid.rfp.uri` (and CIDs must match) — provider relay refuses to settle otherwise.
+- `Accept` MUST be authored by the same DID that authored the referenced RFP.
+- `Receipt` MUST be authored by the same DID that authored the referenced Bid.
+- All records carry badge.blue inline attestations. Receipts additionally carry a remote proof CID binding accept → receipt.
+
+### Discovery
+
+Forward via strongRefs in each record. Backward via backlink indexers (e.g. Constellation) that enumerate all bids pointing at a given RFP without scanning the firehose. In production, bidders advertise via `market.offering` records; requesters discover via relay `listReposByCollection` + firehose watchers.
+
+### Implementation status
 
 | Subsystem | Status |
 |-----------|--------|
@@ -57,6 +237,7 @@ codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
 
 See `open-architecture/STATUS_REPORT.md` for stub→implementation map.
 See `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` for full architecture deep-dive.
+See `compute-contract/README.md` for the RFP lifecycle spec with Mermaid diagrams.
 
 ---
 
@@ -560,11 +741,11 @@ cd deno-macos-runner-desktop && bash scripts/deploy.sh    # Tray app
 | File | Purpose |
 |------|---------|
 | `CLAUDE.md` | Project-wide coding standards (ABC layering, Deno+Hono+JSR patterns) |
-| `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` | Full architecture deep-dive (1121+ lines) |
+| `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` | Full architecture deep-dive (1454 lines) |
 | `open-architecture/STATUS_REPORT.md` | Stub→implementation mapping |
 | `open-architecture/open_architecture_today.md` | Alice's reasoning (the blueprint) |
-| `compute-contract/lexicons/` | AT Protocol record schemas |
-| `compute-contract/README.md` | RFP lifecycle spec with diagrams |
+| `compute-contract/lexicons/` | AT Protocol record schemas (22 record types, 8 XRPC ops) |
+| `compute-contract/README.md` | RFP lifecycle spec with Mermaid diagrams, YAML examples, shell walkthrough |
 
 ## Architecture
 
