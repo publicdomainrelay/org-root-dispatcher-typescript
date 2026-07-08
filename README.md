@@ -744,6 +744,101 @@ cd deno-macos-runner-desktop && bash scripts/deploy.sh    # Tray app
 
 ---
 
+## Releases
+
+Prebuilt binaries and SPA bundles from every push to `main`. Two release tracks:
+
+### `latest` — 16 CLI binaries + SPAs
+
+```bash
+# Download a specific binary
+curl -fsSLo request-vm-ssh \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh
+chmod +x request-vm-ssh
+./request-vm-ssh --help
+
+# Download all (Linux x86_64 tar.gz)
+curl -fsSLo binaries-linux.tar.gz \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/binaries-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf binaries-linux.tar.gz
+
+# Download SPAs
+curl -fsSLo compute-spa.tar.gz \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/compute-spa.tar.gz
+curl -fsSLo did-key-associator.tar.gz \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/did-key-associator.tar.gz
+
+# Or list all assets
+gh release view latest --repo publicdomainrelay/org-root-dispatcher-typescript
+```
+
+| Binary | Use |
+|--------|-----|
+| `request-vm-ssh` | Requester CLI — posts RFP, collects bids, SSHs into provisioned VM |
+| `hono-bidder` | Bidder CLI — provides compute (container/VM/worker), responds to RFPs |
+| `compute-contract-gateway` | Gateway HTTP API — request compute via XRPC endpoints |
+| `hono-policy` | Policy engine — evaluates fulfillment policies |
+| `hono-plc` | PLC directory — ephemeral did:plc directory for local dev |
+| `hono-pds` | PDS — AT Protocol Personal Data Server |
+| `hono-did-key-relay-relayer` | Relay dispatcher — WebSocket tunnel routing by SNI subdomain |
+| `hono-did-key-relay-subscriber` | Relay subscriber — connect PDS/relay through dispatcher |
+| `tunnel-subscriber` | In-VM agent — bridges relay tunnel to local sshd |
+| `tunnel` | SSH ProxyCommand — pipes stdin/stdout through relay WebSocket |
+| `hono-compute-provider` | Compute provider — provisions local containers or DigitalOcean droplets |
+| `hono-compute-deno` | Deno worker XRPC — manifest store + instance runner |
+| `hono-sandbox` | Ephemeral sandbox — execute code in isolated Deno workers |
+| `hono-http-static` | Static file server |
+| `compute-spa.tar.gz` | Browser SPA — request VMs, view saved VMs, access terminals |
+| `did-key-associator.tar.gz` | Browser SPA — associate did:key identifiers with AT Protocol account |
+
+### `desktop-latest` — macOS tray app
+
+```bash
+# Download macOS .app bundle
+curl -fsSLo macos-desktop.zip \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/download/desktop-latest/macos-desktop.zip
+unzip macos-desktop.zip
+
+# Cross-platform desktop CLI
+curl -fsSLo hono-desktop \
+  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/download/desktop-latest/hono-desktop
+chmod +x hono-desktop
+./hono-desktop --port 8080
+```
+
+| Asset | Platform | Use |
+|-------|----------|-----|
+| `macos-desktop.zip` | macOS (Apple Silicon) | Tray app: OAuth login, local bidder, container provisioning |
+| `hono-desktop` | macOS binary | Cross-platform headless bidder server |
+| `hono-desktop-linux` | Linux binary | Cross-platform headless bidder server |
+
+### Using binaries
+
+All binaries are self-contained Deno compiled executables. No runtime needed.
+
+```bash
+# Requester: request and SSH into a VM (replace <bidder-did>)
+./request-vm-ssh --policy-mode only_me --bid-window-sec 3 \
+  --exec "hostname && uname -a"
+
+# Bidder: provide compute (requires container runtime)
+./hono-bidder --compute-provider-local \
+  --accept-scope only_me --serve-port 0
+
+# PDS: run a personal data server
+./hono-pds --port 2583
+
+# Relay: run the dispatcher
+./hono-did-key-relay-relayer --hostname localhost --port 5555
+
+# Tunnel: SSH through relay to a guest VM
+ssh -o ProxyCommand='./tunnel --dispatcher-host xrpc.fedproxy.com --subdomain <sub>' root@vm
+
+# SPA: serve locally with static file server
+tar -xzf compute-spa.tar.gz
+./hono-http-static --port 8080 --serve-path .
+```
+
 ## Key Files
 
 | File | Purpose |
