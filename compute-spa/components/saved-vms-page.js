@@ -1,9 +1,14 @@
-import { log, getSavedVMs, removeVM, COMPUTE_VM_DELETE_NSID, deleteRecord } from '../main.js';
+import {
+  log, getSavedVMs, removeVM, COMPUTE_VM_DELETE_NSID, EVENT_NSID, SUBMIT_EVENT_NSID,
+  loadRelayKeypair, signAttestation,
+} from '../main.js';
+import { createEphemeralPds } from '../lib/ephemeral-pds.js';
+import { createServiceAuthJWT } from '../lib/service-auth.js';
 
-/*
- * TODO: Add market event record creation and terminal integration when
- * browser-safe packages are complete.
- */
+/** Authority segment of an at:// URI (`at://<authority>/collection/rkey`). */
+function atUriAuthority(uri) {
+  return uri.replace(/^at:\/\//, '').split('/')[0];
+}
 
 export class SavedVmsPage extends HTMLElement {
   connectedCallback() {
@@ -75,6 +80,80 @@ export class SavedVmsPage extends HTMLElement {
     }
   }
 
+  /**
+   * POST a signed market.event(vm.delete) record to the bidder's submitEvent
+   * endpoint. Mirrors request-vm-page.js's _submitAcceptToBidder (self-signed
+   * JWT, no OAuth agent) and atproto-market/lib/requester-xrpc/mod.ts's
+   * teardown step (compute.events.vm.delete wrapped in a market.event,
+   * bound to the original accept via a receipt strongRef).
+   */
+  async _submitDeleteEvent(vm) {
+    const kp = loadRelayKeypair();
+    if (!kp) {
+      log('warn', 'saved-vms', 'delete:noKeypair', { uri: vm.uri });
+      return false;
+    }
+    if (!vm.receiptUri || !vm.receiptCid || !vm.submitEventRef) {
+      log('info', 'saved-vms', 'delete:skipped', {
+        reason: 'missing receipt refs', uri: vm.uri,
+        receiptUri: vm.receiptUri, receiptCid: vm.receiptCid, submitEventRef: vm.submitEventRef,
+      });
+      return false;
+    }
+
+    const requesterDid = atUriAuthority(vm.uri);
+    const epds = createEphemeralPds(requesterDid);
+    const nowIso = new Date().toISOString();
+
+    const deletePayload = { $type: COMPUTE_VM_DELETE_NSID, reason: 'user_requested', createdAt: nowIso };
+    const { uri: delUri, cid: delCid } = await epds.createRecord(COMPUTE_VM_DELETE_NSID, {
+      ...deletePayload,
+      signatures: [await signAttestation(kp, deletePayload, requesterDid)],
+    });
+
+    const eventPayload = {
+      $type: EVENT_NSID,
+      receipt: { $type: 'com.atproto.repo.strongRef', uri: vm.receiptUri, cid: vm.receiptCid },
+      payload: { $type: 'com.atproto.repo.strongRef', uri: delUri, cid: delCid },
+      createdAt: nowIso,
+    };
+    const { uri: eventUri, cid: eventCid } = await epds.createRecord(EVENT_NSID, {
+      ...eventPayload,
+      signatures: [await signAttestation(kp, eventPayload, requesterDid)],
+    });
+
+    try {
+      const submitEventRef = vm.submitEventRef;
+      const submitUrl = submitEventRef.endsWith('/')
+        ? `${submitEventRef}xrpc/${SUBMIT_EVENT_NSID}`
+        : `${submitEventRef}/xrpc/${SUBMIT_EVENT_NSID}`;
+      let audDid = submitEventRef;
+      try {
+        const u = new URL(submitEventRef.startsWith('http') ? submitEventRef : `https://${submitEventRef}`);
+        audDid = `did:web:${u.hostname}`;
+      } catch { /* leave as-is */ }
+      const jwt = createServiceAuthJWT({
+        privateKeyHex: kp.privateKeyHex,
+        iss: requesterDid,
+        aud: audDid,
+        lxm: SUBMIT_EVENT_NSID,
+      });
+      const res = await fetch(submitUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+        body: JSON.stringify({ uri: eventUri, cid: eventCid, record: eventPayload }),
+      });
+      const body = await res.json().catch(() => ({}));
+      log(res.ok ? 'info' : 'warn', 'saved-vms', 'delete:eventResult', {
+        uri: vm.uri, status: res.status, ok: res.ok, error: body.error || body.message,
+      });
+      return res.ok;
+    } catch (err) {
+      log('error', 'saved-vms', 'delete:eventError', { uri: vm.uri, error: String(err) });
+      return false;
+    }
+  }
+
   async _handleDelete(vm) {
     if (!vm.uri) {
       removeVM(vm.uri);
@@ -83,15 +162,7 @@ export class SavedVmsPage extends HTMLElement {
     }
 
     log('info', 'saved-vms', 'delete', { uri: vm.uri });
-
-    try {
-      // TODO: Create a delete event record in the compute events collection
-      // when the market event NSIDs are finalized.
-      // e.g. createRecord(agent, COMPUTE_EVENT_NSID, { type: 'vm.delete', ref: vm.uri })
-      log('info', 'saved-vms', 'delete:eventRecord', { note: 'TODO: create market event record' });
-    } catch (err) {
-      log('error', 'saved-vms', 'delete:eventError', { error: String(err) });
-    }
+    await this._submitDeleteEvent(vm);
 
     removeVM(vm.uri);
     this.refresh();

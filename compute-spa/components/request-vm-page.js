@@ -779,6 +779,9 @@ export class RequestVmPage extends HTMLElement {
       // Create market.accept record
       let acceptUri = null;
       let acceptCid = null;
+      let receiptUri = null;
+      let receiptCid = null;
+      let submitEventRef = null;
 
       if (winnerBid) {
         const bidRef = winnerBid.bidRef || winnerBid;
@@ -808,6 +811,9 @@ export class RequestVmPage extends HTMLElement {
           );
           if (receipt) {
             this._addLog("success", "Provisioning receipt received");
+            receiptUri = receipt.uri || null;
+            receiptCid = receipt.cid || null;
+            submitEventRef = receipt.submitEvent || null;
           }
         }
       } else {
@@ -890,6 +896,9 @@ export class RequestVmPage extends HTMLElement {
         status: "provisioning",
         password,
         acceptUri,
+        receiptUri,
+        receiptCid,
+        submitEventRef,
         relaySubdomain: subdomain,
         relayProxyRef: proxyRef,
         createdAt: new Date().toISOString(),
