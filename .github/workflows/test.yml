@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Smoke tests
+        run: |
+          deno test --allow-all atproto-market/request-vm-ssh/cli_smoke_test.ts
+          deno test --allow-all hono-pds/test/cli_smoke_test.ts
+          deno test --allow-all hono-compute-provider/test/cli_smoke_test.ts
+          deno test --allow-all typescript-helpers/test/cli_smoke_test.ts
+          deno test --allow-all deno-worker-sandbox/test/cli_smoke_test.ts
+          deno test --allow-all did-key-relay/test/tunnel_test.ts
+          deno test --allow-all hono-jsr/hono-package-registry/cli_smoke_test.ts
+
+      - name: Type check
+        run: |
+          deno check atproto-market/request-vm-ssh/mod.ts
+          deno check atproto-market/hono-bidder/mod.ts
+          deno check hono-pds/main.ts
+          deno check atproto-market/hono-compute-contract-gateway/mod.ts
+          deno check atproto-market/hono-policy/mod.ts

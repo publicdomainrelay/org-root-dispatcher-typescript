@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact-suffix: linux-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact-suffix: macos-arm64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Compile binaries
+        run: |
+          mkdir -p dist
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder atproto-market/hono-bidder/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh atproto-market/request-vm-ssh/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway atproto-market/hono-compute-contract-gateway/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds hono-pds/main.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer did-key-relay/hono-did-key-relay-relayer/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber did-key-relay/hono-did-key-relay-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider hono-compute-provider/hono-compute-provider/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno deno-worker-sandbox/hono-compute-deno/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox deno-worker-sandbox/hono-sandbox/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static typescript-helpers/hono-http-static/mod.ts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deno-binaries-${{ matrix.artifact-suffix }}
+          path: dist/*

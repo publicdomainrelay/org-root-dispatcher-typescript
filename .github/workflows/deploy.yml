@@ -1,0 +1,38 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+permissions: {}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+        persist-credentials: false
+    - name: Install opkssh
+      run: curl -sSLf https://raw.githubusercontent.com/openpubkey/opkssh/main/scripts/install-linux.sh | sudo bash
+    - name: Login
+      run: opkssh login github
+    - name: fedproxy
+      continue-on-error: true
+      run: ssh deploy@fedproxy.com 'cd atproto-reverse-proxy && bash scripts/deploy.sh'
+    - name: compute SPA
+      continue-on-error: true
+      run: ssh deploy@compute.fedfork.com 'cd compute-spa && bash scripts/deploy.sh'
+    - name: QR associator
+      continue-on-error: true
+      run: ssh deploy@qr.fedfork.com 'cd did-key-associator && bash scripts/deploy.sh'
+    - name: Tray app
+      continue-on-error: true
+      run: ssh deploy@tray.fedfork.com 'cd deno-macos-runner-desktop && bash scripts/deploy.sh'
+    - name: Market relay
+      continue-on-error: true
+      run: ssh deploy@reg.market.fedfork.com 'cd atproto-relay && deno run -A hono-atproto-relay/mod.ts --hostname reg.market.fedfork.com'
+    - name: JSR registry
+      continue-on-error: true
+      run: ssh deploy@jsr.fedfork.com 'cd hono-jsr && deno run -A hono-package-registry/main.ts'
