@@ -33,37 +33,65 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Compile binaries
+      - name: Compile binaries (linux)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: |
           mkdir -p dist
           set -e
-          BINS="\
-            atproto-market/hono-bidder/mod.ts hono-bidder \
-            atproto-market/request-vm-ssh/mod.ts request-vm-ssh \
-            atproto-market/hono-compute-contract-gateway/mod.ts compute-contract-gateway \
-            atproto-market/hono-policy/mod.ts hono-policy \
-            atproto-market/hono-plc/mod.ts hono-plc \
-            hono-pds/main.ts hono-pds \
-            did-key-relay/hono-did-key-relay-relayer/mod.ts hono-did-key-relay-relayer \
-            did-key-relay/hono-did-key-relay-subscriber/mod.ts hono-did-key-relay-subscriber \
-            did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts tunnel-subscriber \
-            did-key-relay/hono-did-key-relay-tunnel/mod.ts tunnel \
-            hono-compute-provider/hono-compute-provider/mod.ts hono-compute-provider \
-            deno-worker-sandbox/hono-compute-deno/mod.ts hono-compute-deno \
-            deno-worker-sandbox/hono-sandbox/mod.ts hono-sandbox \
-            typescript-helpers/hono-http-static/mod.ts hono-http-static"
-          while read -r src name; do
-            [ -z "$src" ] && continue
-            if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
-              deno compile --allow-all --target ${{ matrix.target }} \
-                --output "dist/${name}-${{ matrix.suffix }}.exe" "$src"
-            else
-              deno compile --allow-all --target ${{ matrix.target }} \
-                --output "dist/${name}-${{ matrix.suffix }}" "$src"
-            fi
-          done <<BINS
-          $BINS
-          BINS
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder-${{ matrix.suffix }} atproto-market/hono-bidder/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh-${{ matrix.suffix }} atproto-market/request-vm-ssh/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway-${{ matrix.suffix }} atproto-market/hono-compute-contract-gateway/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }} atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }} atproto-market/hono-plc/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }} hono-pds/main.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-relayer/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }} hono-compute-provider/hono-compute-provider/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }} deno-worker-sandbox/hono-compute-deno/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }} deno-worker-sandbox/hono-sandbox/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static-${{ matrix.suffix }} typescript-helpers/hono-http-static/mod.ts
+
+      - name: Compile binaries (macos)
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: |
+          mkdir -p dist
+          set -e
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder-${{ matrix.suffix }} atproto-market/hono-bidder/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh-${{ matrix.suffix }} atproto-market/request-vm-ssh/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway-${{ matrix.suffix }} atproto-market/hono-compute-contract-gateway/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }} atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }} atproto-market/hono-plc/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }} hono-pds/main.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-relayer/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }} hono-compute-provider/hono-compute-provider/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }} deno-worker-sandbox/hono-compute-deno/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }} deno-worker-sandbox/hono-sandbox/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static-${{ matrix.suffix }} typescript-helpers/hono-http-static/mod.ts
+
+      - name: Compile binaries (windows)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        run: |
+          mkdir -p dist
+          set -e
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder-${{ matrix.suffix }}.exe atproto-market/hono-bidder/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh-${{ matrix.suffix }}.exe atproto-market/request-vm-ssh/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway-${{ matrix.suffix }}.exe atproto-market/hono-compute-contract-gateway/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }}.exe atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }}.exe atproto-market/hono-plc/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }}.exe hono-pds/main.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-relayer/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }}.exe hono-compute-provider/hono-compute-provider/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }}.exe deno-worker-sandbox/hono-compute-deno/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }}.exe deno-worker-sandbox/hono-sandbox/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static-${{ matrix.suffix }}.exe typescript-helpers/hono-http-static/mod.ts
 
       - name: Build SPAs
         if: matrix.target == 'x86_64-unknown-linux-gnu'
