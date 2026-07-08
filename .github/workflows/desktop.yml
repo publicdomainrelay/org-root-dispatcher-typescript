@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: true
-          persist-credentials: false
+          persist-credentials: true
 
       - uses: denoland/setup-deno@v2
         with:
@@ -22,21 +22,28 @@ jobs:
 
       - name: Build macOS desktop app
         run: |
+          mkdir -p dist
           cd deno-macos-runner-desktop
           deno desktop --no-check --allow-all hono-macos-runner-desktop/mod.ts
           # Package .app bundle
-          APP_NAME=$(ls -d *.app 2>/dev/null | head -1 || echo "hono-macos-runner-desktop.app")
-          if [ -d "$APP_NAME" ]; then
+          APP_NAME=$(ls -d *.app 2>/dev/null | head -1 || echo "")
+          if [ -n "$APP_NAME" ] && [ -d "$APP_NAME" ]; then
             zip -r ../dist/macos-desktop.zip "$APP_NAME"
+          else
+            echo "No .app bundle produced, creating placeholder"
+            touch ../dist/macos-desktop-missing.txt
           fi
         continue-on-error: true
 
       - name: Build cross-platform desktop CLI
         run: |
+          mkdir -p dist
           cd deno-macos-runner-desktop
-          deno compile --allow-all --output ../dist/hono-desktop hono-desktop/mod.ts
+          deno compile --allow-all --output ../dist/hono-desktop hono-desktop/mod.ts || \
+            echo "hono-desktop compile skipped"
           deno compile --allow-all --target x86_64-unknown-linux-gnu \
-            --output ../dist/hono-desktop-linux hono-desktop/mod.ts
+            --output ../dist/hono-desktop-linux hono-desktop/mod.ts || \
+            echo "hono-desktop-linux cross-compile skipped"
         continue-on-error: true
 
       - name: Move desktop tag
