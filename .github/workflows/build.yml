@@ -52,13 +52,18 @@ jobs:
             deno-worker-sandbox/hono-compute-deno/mod.ts hono-compute-deno \
             deno-worker-sandbox/hono-sandbox/mod.ts hono-sandbox \
             typescript-helpers/hono-http-static/mod.ts hono-http-static"
-          echo "$BINS" | while read -r src name; do
+          while read -r src name; do
             [ -z "$src" ] && continue
-            extsuffix=""
-            [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ] && extsuffix=".exe"
-            deno compile --allow-all --target ${{ matrix.target }} \
-              --output "dist/${name}${extsuffix}" "$src"
-          done
+            if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
+              deno compile --allow-all --target ${{ matrix.target }} \
+                --output "dist/${name}.exe" "$src"
+            else
+              deno compile --allow-all --target ${{ matrix.target }} \
+                --output "dist/${name}" "$src"
+            fi
+          done <<BINS
+          $BINS
+          BINS
 
       - name: Build SPAs
         if: matrix.target == 'x86_64-unknown-linux-gnu'
