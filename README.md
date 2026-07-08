@@ -235,9 +235,42 @@ Architecture as code: `open-architecture/lib/abc/alice/mod.ts` — `whatAliceIs(
 codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
 ```
 
+See `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` (1454 lines) for full architecture deep-dive.
 See `open-architecture/STATUS_REPORT.md` for stub→implementation map.
-See `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` for full architecture deep-dive.
 See `compute-contract/README.md` for the RFP lifecycle spec with Mermaid diagrams.
+
+### Settlement flow
+
+Two settlement modes, both content-addressed with attestation chains:
+
+**Free settlement** — zero-cost compute. Requester creates `accepts.free` record, GETs bidder's `/free/receipt/{uri}/{cid}`. Bidder mints `receipts.free` with remote proof CID binding accept→receipt. Verification: `verifyFreeGrant` checks NSID, author DID, and CID binding.
+
+**X402 settlement** — HTTP 402 Payment Required. Requester creates signed `accepts.x402` record, GETs bidder's payment URL. Bidder validates payment, returns `receipts.x402`. Optional `paymentMiddleware` for payment processing.
+
+Both paths produce a signed `market.receipt` record with:
+- `rfp`, `bid`, `accept` strongRefs (full contract chain)
+- `cid` — attestation CID binding accept→receipt (DAG-CBOR + SHA-256 → CIDv1)
+- `signatures` — badge.blue inline attestations by the receipt author
+
+### Event flow (VM lifecycle)
+
+Events are `market.event` records submitted via `submitEvent` XRPC. Each event strongRefs the receipt it pertains to and carries a domain-specific payload:
+
+| Event | Payload NSID | Trigger | Handler |
+|-------|-------------|---------|---------|
+| `vm.started` | `compute.events.vm.started` | VM/container boots | `{ createdAt }` |
+| `vm.onNetwork` | `compute.events.vm.onNetwork` | Guest gets IP | `{ address?, createdAt }` |
+| `vm.delete` | `compute.events.vm.delete` | Requester done | `{ reason, createdAt }` — bidder destroys VM |
+
+**vm.delete flow:**
+1. Requester creates signed `compute.events.vm.delete` record
+2. Wraps in signed `market.event` with receipt strongRef
+3. `submitEvent` XRPC to bidder's `pdr_temp_compute_event` endpoint
+4. Bidder validates: receipt exists in `activeContracts`, `issuerDid` matches accept author
+5. Bidder calls `computeProvider.destroy(providerId)` — kills container/deletes droplet
+6. Fires `onContractChange({ type: "terminated" })`, removes from `activeContracts`
+
+Events are submitted in background (`eventBackground: true`) — bidder responds 200 immediately, processes async. Only the accept author can submit events against their receipt.
 
 ---
 
