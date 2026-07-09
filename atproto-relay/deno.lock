@@ -89,6 +89,8 @@
           "jsr:@cliffy/command@^1.0.0-rc.7"
         ]
       },
+      "jsr:@publicdomainrelay/compute-spa-keypair-noble@0.0.0": {},
+      "jsr:@publicdomainrelay/compute-spa-relay-client@0.0.0": {},
       "jsr:@publicdomainrelay/event-bus@0.1.0": {},
       "jsr:@publicdomainrelay/firehose-watcher-abc@0.0.0": {
         "dependencies": [
