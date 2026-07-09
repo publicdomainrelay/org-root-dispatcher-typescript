@@ -325,6 +325,41 @@ This posts a `compute.vm` record + signed `market.rfp`, collects bids,
 picks the winner, provisions the guest via cloud-init, and SSHs in through
 the websocket relay tunnel.
 
+### 2b. Run with direct_network (multi-operator trust)
+
+`direct_network` accepts RFPs from DIDs in the operator's vouch graph. Requires
+two operators who have mutually vouched for each other via `sh.tangled.graph.vouch`.
+
+**Setup (one-time):** Both operators scan the QR codes from each other's processes
+using the did-key-associator webapp at `https://qr.fedfork.com`.
+
+**Terminal 1 — Bidder (aliceoa):**
+```bash
+cd atproto-market
+deno run -A hono-bidder/mod.ts \
+  --accept-scope direct_network \
+  --private-key-hex-path ~/Documents/bidder-aliceoa-private-key.hex \
+  --pds-state-path ~/Documents/bidder-aliceoa-pds-state.db \
+  --compute-provider-local
+```
+
+**Terminal 2 — Requester (johnandersen777):**
+```bash
+cd atproto-market
+deno run -A request-vm-ssh/mod.ts \
+  --policy-mode direct_network \
+  --bid-window-sec 30 \
+  --private-key-hex-path ~/Documents/requester-private-key.hex \
+  --pds-state-path ~/Documents/requester-pds-state.db
+```
+
+**Trust chain:** requester (`qnlb2vbn...`) → requester_associate badgeBlueKeys
+keyId=`5svqtrhheairglgiiyvutzik` (john) → aliceoa vouches for john via
+`sh.tangled.graph.vouch` → bidder operator (`lpfuqerea3...`, aliceoa).
+
+**Verification:** bidder logs `scope check: matched requester association via operator`,
+requester logs `bids_collected count:1`, `compute_request_complete receiptOk:true`.
+
 ### 3. Run everything locally (single process)
 
 ```bash
