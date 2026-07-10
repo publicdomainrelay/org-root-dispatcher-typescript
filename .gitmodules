@@ -31,3 +31,9 @@
 [submodule "did-key-associator"]
 	path = did-key-associator
 	url = https://github.com/publicdomainrelay/did-key-associator.git
+[submodule "atproto-reverse-proxy"]
+	path = atproto-reverse-proxy
+	url = https://github.com/publicdomainrelay/atproto-reverse-proxy
+[submodule "compute-contract"]
+	path = compute-contract
+	url = https://github.com/publicdomainrelay/compute-contract.git
