@@ -37,3 +37,6 @@
 [submodule "compute-contract"]
 	path = compute-contract
 	url = https://github.com/publicdomainrelay/compute-contract.git
+[submodule "atproto-relay"]
+	path = atproto-relay
+	url = https://github.com/publicdomainrelay/atproto-relay
