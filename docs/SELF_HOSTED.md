@@ -89,7 +89,7 @@ Bidder logs JSON to stdout. Look for:
 
 ```json
 {"event":"bidder_did_plc_registered","did":"did:plc:..."}
-{"event":"bidder_relay_registered","subdomain":"...","proxyRef":"did:web:..."}
+{"event":"bidder_relay_registered","subdomain":"...","ingressRef":"did:web:..."}
 {"event":"registered_with_registry","endpoint":"..."}
 ```
 
@@ -148,7 +148,7 @@ REPO_PRIVATE_KEY_HEX="<64-char-hex>" \
 | `--port` | `PORT` | `0` | Listen port (0 = random) |
 | `--private-key-hex` | `REPO_PRIVATE_KEY_HEX` | -- | Fixed identity key |
 | `--plc-directory-url` | `PLC_DIRECTORY_URL` | `https://plc.directory` | PLC directory |
-| `--dispatcher-host` | `DISPATCHER_HOST` | `xrpc.fedproxy.com` | XRPC relay host |
+| `--dispatcher-host` | `INGRESS_PROXY_HOST` | `xrpc.fedproxy.com` | XRPC relay host |
 | `--label` | `BIDDER_LABEL` | `bidder` | Log/relay label |
 | `--compute-provider` | `COMPUTE_PROVIDER` | -- | `local` or `digitalocean` |
 | `--compute-provider-token` | `COMPUTE_PROVIDER_TOKEN` | -- | Auth token for provider API |

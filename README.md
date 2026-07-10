@@ -383,7 +383,7 @@ ssh -o ProxyCommand='websocat --binary wss://<vmName>--<flat-did>.fedproxy.com' 
 |---|------|--------|----------|------|
 | 1 | `atproto-market/` | `publicdomainrelay/atproto-market` | 48 | Market engine: RFP, bid, accept, requester, bidder, gateway, policy, settlement |
 | 2 | `hono-compute-provider/` | `publicdomainrelay/compute-provider-digitalocean` | 16 | Compute provisioning: local containers, QEMU VMs, DigitalOcean droplets, OIDC, RBAC |
-| 3 | `did-key-relay/` | `publicdomainrelay/did-key-relay` | 11 | WebSocket relay: dispatcher, tunnel, subscriber, SNI subdomain routing |
+| 3 | `did-key-ingress-proxy/` | `publicdomainrelay/did-key-ingress-proxy` | 11 | WebSocket relay: dispatcher, tunnel, subscriber, SNI subdomain routing |
 | 4 | `typescript-helpers/` | `publicdomainrelay/typescript-helpers` | 14 | Cross-repo shared: logger, serve, CLI args, firehose watchers, hostname helpers |
 | 5 | `hono-pds/` | `publicdomainrelay/hono-pds` | 4 | AT Protocol PDS: repo storage, MST, CBOR, CARv1, accounts, firehose |
 | 6 | `deno-worker-sandbox/` | `publicdomainrelay/deno-hono-sandbox` | 10 | Deno Worker sandbox: ephemeral compute, manifest store, instance runner |
@@ -403,11 +403,11 @@ ssh -o ProxyCommand='websocat --binary wss://<vmName>--<flat-did>.fedproxy.com' 
 
 These run independently, providing the backbone for the market.
 
-### Dispatcher (did-key-relay)
+### Dispatcher (did-key-ingress-proxy)
 
 ```bash
-cd did-key-relay
-deno run -A hono-did-key-relay-relayer/mod.ts \
+cd did-key-ingress-proxy
+deno run -A hono-did-key-ingress-proxy/mod.ts \
   --hostname localhost --port 5555
 ```
 Options: `--hostname` (default xrpc.fedproxy.com), `--port` (default 8080), `--relay-timeout-ms` (30000), `--nonce-ttl-ms` (60000), `--additional-hosts`, `--unix-socket`.
@@ -458,7 +458,7 @@ Options: `--store` (local/git), `--base-dir` (./packages), `--git-url`, `--port`
 ## Full Local Dev Stack (6 terminals)
 
 ```
-T1: dispatcher  →  did-key-relay/hono-did-key-relay-relayer --hostname localhost --port 5555
+T1: dispatcher  →  did-key-ingress-proxy/hono-did-key-ingress-proxy --hostname localhost --port 5555
 T2: relay       →  atproto-relay/hono-atproto-relay --port 2584 --local-dev-relay-port 5555
 T3: PDS         →  hono-pds main.ts --port 2583
 T4: JSR         →  hono-jsr hono-package-registry/main.ts --base-dir .. --port 5556 --no-passthrough
@@ -576,8 +576,8 @@ deno run -A hono-package-registry/main.ts --port 8080
 ### Dispatcher
 
 ```bash
-cd did-key-relay
-deno run -A hono-did-key-relay-relayer/mod.ts --hostname localhost --port 5555
+cd did-key-ingress-proxy
+deno run -A hono-did-key-ingress-proxy/mod.ts --hostname localhost --port 5555
 ```
 
 ### Market Relay
@@ -624,13 +624,13 @@ deno run -A hono-desktop/mod.ts \
   --dispatcher-host xrpc.fedproxy.com \
   --storage-dir ~/Documents/bidder-state
 ```
-Options: `--port` (0), `--hostname` (0.0.0.0), `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host`, `--plc-directory-url`, `--offering-refresh-sec` (300), `--skip-market`, `--start-bidder`, `--private-key-hex`. Env vars: `PORT`, `HOSTNAME`, `SERVICE_NAME`, `STORAGE_DIR`, `STATE_PATH`, `OAUTH_CLIENT_ID`, `OAUTH_REDIRECT_URI`, `RELAY_DISPATCHER_HOST`, `PLC_DIRECTORY_URL`, `FIREHOSE_URL`, `OFFERING_REFRESH_SEC`, `SKIP_MARKET`.
+Options: `--port` (0), `--hostname` (0.0.0.0), `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host`, `--plc-directory-url`, `--offering-refresh-sec` (300), `--skip-market`, `--start-bidder`, `--private-key-hex`. Env vars: `PORT`, `HOSTNAME`, `SERVICE_NAME`, `STORAGE_DIR`, `STATE_PATH`, `OAUTH_CLIENT_ID`, `OAUTH_REDIRECT_URI`, `RELAY_INGRESS_PROXY_HOST`, `PLC_DIRECTORY_URL`, `FIREHOSE_URL`, `OFFERING_REFRESH_SEC`, `SKIP_MARKET`.
 
 ### Relay Subscriber Client
 
 ```bash
-cd did-key-relay
-deno run -A hono-did-key-relay-subscriber/mod.ts \
+cd did-key-ingress-proxy
+deno run -A hono-did-key-ingress-proxy-subscriber/mod.ts \
   --dispatcher-host xrpc.fedproxy.com \
   --atproto-handle user.bsky.social \
   --atproto-password xxxx
@@ -640,14 +640,14 @@ Options: `--dispatcher-host`, `--atproto-pds` (https://bsky.social), `--atproto-
 ### Tunnel Client (SSH ProxyCommand)
 
 ```bash
-cd did-key-relay
+cd did-key-ingress-proxy
 
 # As SSH ProxyCommand
-ssh -o ProxyCommand='deno run -A hono-did-key-relay-tunnel/mod.ts \
+ssh -o ProxyCommand='deno run -A hono-did-key-ingress-proxy-tunnel/mod.ts \
   --dispatcher-host xrpc.fedproxy.com --subdomain <sub>' root@vm
 
 # Direct tunnel
-deno run -A hono-did-key-relay-tunnel/mod.ts \
+deno run -A hono-did-key-ingress-proxy-tunnel/mod.ts \
   --dispatcher-host xrpc.fedproxy.com --subdomain <subdomain>
 ```
 No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host` (required), `--subdomain` (required). Pipes stdin/stdout through relay WebSocket to guest sshd.
@@ -655,17 +655,17 @@ No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host`
 ### Tunnel Subscriber (in-VM agent)
 
 ```bash
-cd did-key-relay
+cd did-key-ingress-proxy
 
 # Run inside VM — bridges relay tunnel to local sshd
-deno run -A hono-did-key-relay-tunnel-subscriber/mod.ts \
+deno run -A hono-did-key-ingress-proxy-tunnel-subscriber/mod.ts \
   --dispatcher-host xrpc.fedproxy.com \
   --aud-host xrpc.fedproxy.com \
   --private-key-hex <64-char-hex> \
   --target-host 127.0.0.1 --target-port 22
 
 # Compiled binary (for VM image)
-deno compile -A hono-did-key-relay-tunnel-subscriber/mod.ts
+deno compile -A hono-did-key-ingress-proxy-tunnel-subscriber/mod.ts
 ./tunnel-subscriber --dispatcher-host <host> --aud-host <host> --private-key-hex <hex>
 ```
 No `cli-args-env.json` — raw `Deno.args` parsing. Options: `--dispatcher-host` (required), `--aud-host` (required), `--private-key-hex` (required), `--target-host` (127.0.0.1), `--target-port` (22). Typically deployed via cloud-init `buildTunnelUserData()` as a systemd service, not run manually.
@@ -685,7 +685,7 @@ deno run -A hono-compute-deno/mod.ts \
   --attestation-key-path ./attestation-key.jwk
 ```
 Sandbox options: `--port` (2584), `--hostname` (127.0.0.1), `--timeout-ms`. Env vars: `PORT`, `HOSTNAME`, `SANDBOX_TIMEOUT_MS`.
-Compute-deno options: `--port` (2585), `--hostname` (127.0.0.1), `--unix-socket`, `--pds-url`, `--atproto-handle`, `--atproto-password`, `--attestation-key-path`, `--timeout-ms`, `--permission-mode` (deny-all), `--policy-handler-built-in`, `--relay`, `--relay-dispatcher-host`. Env vars: `PORT`, `HOSTNAME`, `UNIX_SOCKET`, `PDS_URL`, `ATPROTO_HANDLE`, `ATPROTO_PASSWORD`, `ATTESTATION_KEY_PATH`, `COMPUTE_DENO_TIMEOUT_MS`, `PERMISSION_MODE`, `POLICY_HANDLER_BUILT_IN`, `RELAY`, `RELAY_DISPATCHER_HOST`.
+Compute-deno options: `--port` (2585), `--hostname` (127.0.0.1), `--unix-socket`, `--pds-url`, `--atproto-handle`, `--atproto-password`, `--attestation-key-path`, `--timeout-ms`, `--permission-mode` (deny-all), `--policy-handler-built-in`, `--relay`, `--relay-dispatcher-host`. Env vars: `PORT`, `HOSTNAME`, `UNIX_SOCKET`, `PDS_URL`, `ATPROTO_HANDLE`, `ATPROTO_PASSWORD`, `ATTESTATION_KEY_PATH`, `COMPUTE_DENO_TIMEOUT_MS`, `PERMISSION_MODE`, `POLICY_HANDLER_BUILT_IN`, `RELAY`, `RELAY_INGRESS_PROXY_HOST`.
 
 ### Static File Server
 
@@ -765,7 +765,7 @@ codegraph explore "runComputeContract createRequesterPDS discoverBiddersFromRela
 codegraph explore "createMarketBidder createVmBidderCallbacks provisionLocal runContainer"
 
 # Relay tunnel
-codegraph explore "createXrpcRelay createSubscriber startTunnel tunnelOverRelay"
+codegraph explore "createIngress createSubscriber startTunnel tunnelOverRelay"
 
 # Attestation
 codegraph explore "verifyRecordSignatures verifyRemoteProof createAttestationCid"
@@ -850,8 +850,8 @@ gh release view latest --repo publicdomainrelay/org-root-dispatcher-typescript
 | `hono-policy` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Policy engine |
 | `hono-plc` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | PLC directory — ephemeral did:plc |
 | `hono-pds` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | PDS — AT Protocol Personal Data Server |
-| `hono-did-key-relay-relayer` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay dispatcher |
-| `hono-did-key-relay-subscriber` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay subscriber |
+| `hono-did-key-ingress-proxy` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay dispatcher |
+| `hono-did-key-ingress-proxy-subscriber` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Relay subscriber |
 | `tunnel-subscriber` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | In-VM tunnel agent |
 | `tunnel` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | SSH ProxyCommand over relay |
 | `hono-compute-provider` | `*-linux-x64` | `*-windows-x64.exe` | `*-macos-arm64` | Compute provider (local/DO) |
@@ -899,7 +899,7 @@ All binaries are self-contained Deno compiled executables. No runtime needed.
 ./hono-pds --port 2583
 
 # Relay: run the dispatcher
-./hono-did-key-relay-relayer --hostname localhost --port 5555
+./hono-did-key-ingress-proxy --hostname localhost --port 5555
 
 # Tunnel: SSH through relay to a guest VM
 ssh -o ProxyCommand='./tunnel --dispatcher-host xrpc.fedproxy.com --subdomain <sub>' root@vm

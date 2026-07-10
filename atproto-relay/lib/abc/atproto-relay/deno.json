@@ -4,6 +4,7 @@
   "license": "Unlicense",
   "exports": "./mod.ts",
   "imports": {
-    "@publicdomainrelay/atproto-relay-common": "jsr:@publicdomainrelay/atproto-relay-common@^0"
+    "@publicdomainrelay/atproto-relay-common": "jsr:@publicdomainrelay/atproto-relay-common@^0",
+    "@publicdomainrelay/firehose-common": "jsr:@publicdomainrelay/firehose-common@^0"
   }
 }

@@ -30,7 +30,8 @@ jobs:
           deno test --allow-all --no-check --config hono-compute-provider/deno.json hono-compute-provider/test/cli_smoke_test.ts
           deno test --allow-all --no-check --config typescript-helpers/deno.json typescript-helpers/test/cli_smoke_test.ts
           deno test --allow-all --no-check --config deno-worker-sandbox/deno.json deno-worker-sandbox/test/cli_smoke_test.ts
-          deno test --allow-all --no-check --config did-key-relay/deno.json did-key-relay/test/tunnel_test.ts
+          deno test --allow-all --no-check --config did-key-ingress-proxy/deno.json did-key-ingress-proxy/test/tunnel_test.ts
+          deno test --allow-all --no-check --config atproto-relay/deno.json atproto-relay/test/
           deno test --allow-all --no-check --config hono-jsr/deno.json hono-jsr/hono-package-registry/cli_smoke_test.ts
 
       - name: Type check
@@ -41,3 +42,4 @@ jobs:
           deno check --config atproto-market/deno.json atproto-market/hono-policy/mod.ts
           deno check --config atproto-market/deno.json atproto-market/hono-plc/mod.ts
           deno check --config hono-pds/deno.json hono-pds/main.ts
+          deno check --config atproto-relay/deno.json atproto-relay/hono-atproto-relay/mod.ts

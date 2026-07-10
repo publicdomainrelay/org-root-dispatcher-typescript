@@ -20,7 +20,7 @@ Runs on every push to `main` and every pull request.
 - `hono-compute-provider` CLI smoke test
 - `typescript-helpers` CLI smoke test
 - `deno-worker-sandbox` CLI smoke test
-- `did-key-relay` tunnel test
+- `did-key-ingress-proxy` tunnel test
 - `hono-jsr` CLI smoke test
 
 **Type checks (5):**
@@ -43,8 +43,8 @@ Compiles 13 binaries on every push to `main`. Matrix build across:
 - `hono-policy` — Policy engine CLI
 - `hono-plc` — PLC directory server
 - `hono-pds` — PDS server
-- `hono-did-key-relay-relayer` — Relay dispatcher
-- `hono-did-key-relay-subscriber` — Relay subscriber client
+- `hono-did-key-ingress-proxy` — Relay dispatcher
+- `hono-did-key-ingress-proxy-subscriber` — Relay subscriber client
 - `tunnel-subscriber` — In-VM tunnel agent
 - `tunnel` — SSH ProxyCommand client
 - `hono-compute-provider` — Compute provider
@@ -91,7 +91,7 @@ cd atproto-market
 deno run --allow-all compute-contract-full-flow/run_full_flow.ts
 
 # Or 6 terminals (full stack):
-# T1: deno run -A did-key-relay/hono-did-key-relay-relayer/mod.ts --hostname localhost --port 5555
+# T1: deno run -A did-key-ingress-proxy/hono-did-key-ingress-proxy/mod.ts --hostname localhost --port 5555
 # T2: deno run -A atproto-relay/hono-atproto-relay/mod.ts --port 2584 --local-dev-relay-port 5555
 # T3: deno run -A hono-pds/main.ts --port 2583
 # T4: deno run -A hono-jsr/hono-package-registry/main.ts --base-dir .. --port 5556 --no-passthrough
@@ -119,6 +119,6 @@ Deploy workflow uses opkssh (no static SSH keys — ephemeral OpenPubkey certifi
 - [ ] Add integration test job (bidder + requester container test)
 - [ ] Add `deno lint` step
 - [ ] Add cross-platform Windows build target for release
-- [ ] Per-repo CI workflows (hono-pds, did-key-relay, deno-worker-sandbox)
+- [ ] Per-repo CI workflows (hono-pds, did-key-ingress-proxy, deno-worker-sandbox)
 - [ ] PR preview deploy for SPA
 - [ ] E2E test against staging environment

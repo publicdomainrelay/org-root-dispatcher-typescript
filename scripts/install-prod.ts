@@ -180,15 +180,14 @@ const ENV_FILES: EnvDef[] = [
     path: "atproto-market/hono-bidder/bidder.env",
     root: "org",
     vars: [
-      ["RELAY_DISPATCHER_HOST", "xrpc.fedproxy.com"],
-      ["REGISTRY_ENDPOINT", "https://relay.mini-cloud-0002.chadig.com"],
+      ["INGRESS_PROXY_HOST", "xrpc.fedproxy.com"],
+      ["RELAY_URL", "https://relay.mini-cloud-0002.chadig.com"],
       ["PLC_DIRECTORY_URL", "https://plc.directory"],
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],
       ["COMPUTE_PROVIDER_LOCAL_VM_IMAGE", QEMU_RUNNER_IMAGE],
       ["COMPUTE_PROVIDER_LOCAL_CACHE_DIR", `${HOME}/.cache/pdr-local`],
       ["OFFERING_REFRESH_SEC", "300"],
-      ["RFP_FIREHOSE_MODE", "subscriberepos"],
-      ["RFP_FIREHOSE_URL", "wss://bsky.network,wss://relay.mini-cloud-0002.chadig.com"],
+      ["FIREHOSE_MODE", "subscriberepos"],
     ],
   },
 ];

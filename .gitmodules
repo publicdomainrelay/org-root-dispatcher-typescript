@@ -13,9 +13,9 @@
 [submodule "typescript-helpers"]
 	path = typescript-helpers
 	url = https://github.com/publicdomainrelay/typescript-helpers
-[submodule "did-key-relay"]
-	path = did-key-relay
-	url = https://github.com/publicdomainrelay/did-key-relay
+[submodule "did-key-ingress-proxy"]
+	path = did-key-ingress-proxy
+	url = https://github.com/publicdomainrelay/did-key-ingress-proxy
 [submodule "atproto-market"]
 	path = atproto-market
 	url = https://github.com/publicdomainrelay/atproto-market

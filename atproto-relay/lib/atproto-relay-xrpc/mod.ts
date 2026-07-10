@@ -1,10 +1,9 @@
-import { EventBus } from "@publicdomainrelay/event-bus";
+import { createBacklogSequencer } from "@publicdomainrelay/backlog-sequencer";
 import type { LoggerInterface } from "@publicdomainrelay/logger";
 import { now } from "@publicdomainrelay/atproto-relay-common";
 import type {
   RelaySequencer,
-  RelayFrame,
-  PdsFirehoseFrame,
+  SubscribeReposFrame,
   PdsSubscriber,
   HostStore,
   HostInfo,
@@ -16,53 +15,16 @@ import type {
 const MAX_BACKLOG = 50000;
 
 export function createRelaySequencer(maxBacklog?: number): RelaySequencer {
-  const max = maxBacklog ?? MAX_BACKLOG;
-  let seq = 0;
-  const backlog: RelayFrame[] = [];
-  const bus = new EventBus<RelayFrame>();
-
-  return {
-    append(origin: string, frame: PdsFirehoseFrame): RelayFrame {
-      seq++;
-      const relayFrame: RelayFrame = { seq, origin, frame, time: now() };
-      backlog.push(relayFrame);
-      if (backlog.length > max) backlog.shift();
-      bus.publish(relayFrame);
-      return relayFrame;
-    },
-    async *backfill(since?: number) {
-      for (const f of backlog) {
-        if (since !== undefined && f.seq <= since) continue;
-        yield f;
-      }
-    },
-    async *live() {
-      const queue: RelayFrame[] = [];
-      let notify: (() => void) | null = null;
-      const unsub = bus.subscribe((f) => {
-        queue.push(f);
-        notify?.();
-      });
-      try {
-        while (true) {
-          if (queue.length > 0) {
-            yield queue.shift()!;
-          } else {
-            await new Promise<void>((r) => { notify = r; });
-            notify = null;
-          }
-        }
-      } finally {
-        unsub();
-      }
-    },
-  };
+  return createBacklogSequencer<SubscribeReposFrame, SubscribeReposFrame>({
+    maxBacklog: maxBacklog ?? MAX_BACKLOG,
+    build: (seq, frame) => ({ ...frame, seq, time: now() }),
+  });
 }
 
 export function createPdsSubscription(
   hostname: string,
   cursor?: number,
-  opts?: { onEvent?: (frame: PdsFirehoseFrame) => void; log?: LoggerInterface },
+  opts?: { onEvent?: (frame: SubscribeReposFrame) => void; log?: LoggerInterface },
 ): PdsSubscriber {
   const log = opts?.log;
   const onEvent = opts?.onEvent;
@@ -100,7 +62,7 @@ export function createPdsSubscription(
         } else {
           return;
         }
-        const frame = raw as PdsFirehoseFrame;
+        const frame = raw as SubscribeReposFrame;
         if (!frame || typeof frame.seq !== "number" || typeof frame.repo !== "string") return;
         cursor = frame.seq;
         onEvent?.(frame);

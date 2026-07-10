@@ -22,8 +22,8 @@ Do the refactor.
 // systemd for example).
 const logger await createLogger({ serviceName: opts.serviceName });
 
-async function cliCreateXrpcRelay() {
-  return await createXrpcRelay({
+async function cliCreateIngress() {
+  return await createIngress({
     logger,
     host: opts.relayDispatcherHost,
   });
@@ -55,7 +55,7 @@ const atproto = await createATProto({
 const computeProviders = {};
 
 if (opts.computeProviderDigitalOceanToken) {
-  const relay = await cliCreateXrpcRelay();
+  const relay = await cliCreateIngress();
   providers.push(
     await createComputeProviderMarketBidderHooks({
       provider: await createComputeProviderDigitalOcean({
@@ -63,7 +63,7 @@ if (opts.computeProviderDigitalOceanToken) {
         serve: await createServe({
           relays: [relay],
         }),
-        getIssuerUrl: () => didWebToHttps(relay.proxyRef),
+        getIssuerUrl: () => didWebToHttps(relay.ingressRef),
         digitaloceanBaseUrl: opts.computeProviderDigitalOceanBaseUrl || "https://api.digitalocean.com",
         doToken: opts.computeProviderDigitalOceanToken,
         // TODO we shouldn't need to pass this, it should always default to this
@@ -87,7 +87,7 @@ if (opts.computeProviderDigitalOceanToken) {
 }
 
 if (opts.computeProviderLocal) {
-  const relay = await cliCreateXrpcRelay();
+  const relay = await cliCreateIngress();
   // TODO oidcIssuer should be created and mounted within both DigitalOcean and
   // Local compute providers as they both require them. DigitalOcean upstream
   // doesn't provider workload ID so we're bolting it on (same for Local), so we
@@ -95,13 +95,13 @@ if (opts.computeProviderLocal) {
   /*
    * const oidcIssuer = createHonoFactoryOidcIssuer({
    *   logger,
-   *   getIssuerUrl: () => didWebToHttps(relay.proxyRef),
-   *   serviceUrl: didWebToHttps(relay.proxyRef),
+   *   getIssuerUrl: () => didWebToHttps(relay.ingressRef),
+   *   serviceUrl: didWebToHttps(relay.ingressRef),
    * });
    * oidcIssuer.mount(app)
    *
    * relay.onServe(() => {
-   *   log("info", "oidc issuer mounted", { didWebToHttps(relay.proxyRef) });
+   *   log("info", "oidc issuer mounted", { didWebToHttps(relay.ingressRef) });
    * });
    */
 
@@ -114,7 +114,7 @@ if (opts.computeProviderLocal) {
         serve: await createServe({
           relays: [relay],
         }),
-        getIssuerUrl: () => didWebToHttps(relay.proxyRef),
+        getIssuerUrl: () => didWebToHttps(relay.ingressRef),
         containerMode: opts.computeProviderLocalContainerMode,
         vmImage: opts.computeProviderLocalVMImage,
         containerImage: opts.computeProviderLocalContainerImage,
@@ -146,7 +146,7 @@ if (opts.computeProviderDenoWorker) {
 let relays = [];
 
 if (!opts.noXrpcRelay) {
-  relays.push(await cliCreateXrpcRelay());
+  relays.push(await cliCreateIngress());
 }
 
 const bidder = await createMarketBidder({
@@ -195,9 +195,9 @@ const bidder = await createMarketBidder({
 });
 
 
-// beginServe() should return from Promise after all relays have proxyRefs and
+// beginServe() should return from Promise after all relays have ingressRefs and
 // started, setup() might need to know what the issuerUrls are based on the
-// proxyRefs (pass via deps)
+// ingressRefs (pass via deps)
 await bidder.beginServe();
 
 // TODO Time await loop forever to let serves happen

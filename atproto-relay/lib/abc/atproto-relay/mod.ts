@@ -17,24 +17,8 @@ export interface AccountInfo {
   seq: number | null;
 }
 
-export interface PdsFirehoseFrame {
-  $type?: string;
-  seq: number;
-  repo: string;
-  commit: { $link: string };
-  rev: string;
-  since: string | null;
-  blocks: Uint8Array;
-  ops: Array<{ action: string; path: string; cid: { $link: string } | null; prev: null }>;
-  time: string;
-}
-
-export interface RelayFrame {
-  seq: number;
-  origin: string;
-  frame: PdsFirehoseFrame;
-  time: string;
-}
+import type { SubscribeReposFrame, SubscribeReposOp } from "@publicdomainrelay/firehose-common";
+export type { SubscribeReposFrame, SubscribeReposOp };
 
 export interface HostStore {
   list(): Promise<HostInfo[]>;
@@ -53,9 +37,9 @@ export interface PdsSubscriber {
 }
 
 export interface RelaySequencer {
-  append(origin: string, frame: PdsFirehoseFrame): RelayFrame;
-  backfill(since?: number): AsyncIterable<RelayFrame>;
-  live(): AsyncIterable<RelayFrame>;
+  append(frame: SubscribeReposFrame): SubscribeReposFrame;
+  backfill(since?: number): AsyncIterable<SubscribeReposFrame>;
+  live(): AsyncIterable<SubscribeReposFrame>;
 }
 
 export interface CollectionIndex {

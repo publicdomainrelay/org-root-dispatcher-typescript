@@ -15,6 +15,9 @@
     "@publicdomainrelay/event-bus": "../typescript-helpers/lib/event-bus/mod.ts",
     "@publicdomainrelay/cli-args-env": "../typescript-helpers/lib/cli-args-env/mod.ts",
     "@publicdomainrelay/hono-error-middleware": "../typescript-helpers/lib/hono-error-middleware/mod.ts",
-    "@publicdomainrelay/hostname-helpers": "../typescript-helpers/lib/hostname-helpers/mod.ts"
+    "@publicdomainrelay/hostname-helpers": "../typescript-helpers/lib/hostname-helpers/mod.ts",
+    "@publicdomainrelay/firehose-common": "../typescript-helpers/lib/firehose-common/mod.ts",
+    "@publicdomainrelay/ws-reconnect": "../typescript-helpers/lib/ws-reconnect/mod.ts",
+    "@publicdomainrelay/backlog-sequencer": "../typescript-helpers/lib/backlog-sequencer/mod.ts"
   }
 }

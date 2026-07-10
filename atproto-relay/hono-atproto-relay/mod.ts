@@ -17,8 +17,7 @@ if (import.meta.main) {
     runtimeConfig,
   ).resolve();
 
-  // ── local-dev: patch fetch + WebSocket so *.localhost resolves through ──
-  // the did-key-relay dispatcher (needed when crawling local bidder PDSes).
+
   const localDevRelayPort = (options.localDevRelayPort as number | undefined) ?? 0;
   if (localDevRelayPort > 0) {
     const realFetch = globalThis.fetch;

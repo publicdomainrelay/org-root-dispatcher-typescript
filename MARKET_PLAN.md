@@ -424,9 +424,9 @@ interface EphemeralBidder {
   keypair: Secp256k1Keypair;
   api: RepoApi;
   app: Hono;
-  proxyRef: string;
+  ingressRef: string;
   relaySubdomain: string;
-  ready: Promise<{ subdomain: string; proxyRef: string }>;
+  ready: Promise<{ subdomain: string; ingressRef: string }>;
   stop: () => void;
   attestationKp: AttestationKeypair;
   activeContracts: Map<string, ActiveContract>;

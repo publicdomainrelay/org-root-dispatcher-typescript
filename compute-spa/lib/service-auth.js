@@ -1,4 +1,4 @@
-// service-auth.js — self-sign service-auth JWTs for the did-key-relay dispatcher.
+// service-auth.js — self-sign service-auth JWTs for the xrpc relay dispatcher.
 // Uses @noble/curves for secp256k1 ES256K signing. No @atproto/crypto or
 // hono-pds imports — those pull Node built-ins that break browser bundles.
 import { secp256k1 } from '@noble/curves/secp256k1';
@@ -11,9 +11,9 @@ function fromHex(hex) {
 }
 
 /**
- * Sign a service-auth JWT for the did-key-relay dispatcher.
+ * Sign a service-auth JWT for the xrpc relay dispatcher.
  * Uses ES256K (secp256k1) — the same algorithm @atproto/crypto uses.
- * The did-key-relay dispatcher verifies this JWT signature.
+ * The xrpc relay dispatcher verifies this JWT signature.
  */
 export function createServiceAuthJWT({ privateKeyHex, iss, aud, lxm }) {
   const header = { alg: 'ES256K', typ: 'jwt' };

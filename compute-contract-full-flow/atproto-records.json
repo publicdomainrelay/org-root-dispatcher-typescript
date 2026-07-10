@@ -1,0 +1,193 @@
+[
+  {
+    "source": "requester",
+    "did": "did:plc:6vccw2ui4tk46zsytpxzes35",
+    "collection": "com.publicdomainrelay.temp.market.rfp",
+    "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a",
+    "cid": "bafyreigalf6jzbujgvi5kliiliir6rv2z4t44gwc4tuyi6m342pi6bhrty",
+    "value": {
+      "$type": "com.publicdomainrelay.temp.market.rfp",
+      "domain": "compute",
+      "payload": {
+        "cid": "bafyreihfivdmlguypz4nxypdkd5lgdhgqauejkthsfkkxg7vim2faxm6ym",
+        "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.compute.vm/3mpzwdilhdk2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "createdAt": "2026-07-07T05:58:02.527Z",
+      "submitBid": "did:plc:6vccw2ui4tk46zsytpxzes35#pdr_temp_market",
+      "signatures": [
+        {
+          "cid": "bafyreia27kj5zhxdparim7ojewrobcslnpurmjsqhfeuua77hm4jqde4pq",
+          "key": "did:key:zQ3shscC3Ls8YczdwNYCk9n9oSLRagGvkSXXZrveeDvBmAavZ",
+          "$type": "network.attested.signature",
+          "issuer": "did:plc:6vccw2ui4tk46zsytpxzes35",
+          "signature": {
+            "$bytes": "bIRzDZpu7buF9vlJ/KoWFzAa3g+gRA4qpM/5t3HQAIoizqV/lfQGzoUJmRcxZeqwiKK/w6hWT6C/udadW/1M+g=="
+          }
+        }
+      ]
+    }
+  },
+  {
+    "source": "requester",
+    "did": "did:plc:6vccw2ui4tk46zsytpxzes35",
+    "collection": "com.publicdomainrelay.temp.market.accept",
+    "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.accept/3mpzwdwvz632a",
+    "cid": "bafyreifesc72g5lgb2gnw7tlvfpjusyuhn3x47zdwrwhravk25camhqm3a",
+    "value": {
+      "bid": {
+        "cid": "bafyreihvbtezemxs4yhmcdu7xldhvv47l5l3b7evzdoilxd3bxevgbiihe",
+        "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bid/3mpzwdilwxl2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "rfp": {
+        "cid": "bafyreigalf6jzbujgvi5kliiliir6rv2z4t44gwc4tuyi6m342pi6bhrty",
+        "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "$type": "com.publicdomainrelay.temp.market.accept",
+      "createdAt": "2026-07-07T05:58:17.552Z",
+      "signatures": [
+        {
+          "cid": "bafyreid65xlu72xf7ph4zod63twjg4fusrqdxcvaiu4ppueojadvxtqb34",
+          "key": "did:key:zQ3shscC3Ls8YczdwNYCk9n9oSLRagGvkSXXZrveeDvBmAavZ",
+          "$type": "network.attested.signature",
+          "issuer": "did:plc:6vccw2ui4tk46zsytpxzes35",
+          "signature": {
+            "$bytes": "aoxXXfC0NoXXptirIo4ck27SteshtWFRbhAg2pt2lHgBxC5racCQz1hqNX+2v8fK4c6HWGmYHX6S9hUeBPPL+Q=="
+          }
+        }
+      ],
+      "submitEvent": "did:plc:6vccw2ui4tk46zsytpxzes35#pdr_temp_compute_event"
+    }
+  },
+  {
+    "source": "requester",
+    "did": "did:plc:6vccw2ui4tk46zsytpxzes35",
+    "collection": "com.publicdomainrelay.temp.compute.vm",
+    "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.compute.vm/3mpzwdilhdk2a",
+    "cid": "bafyreihfivdmlguypz4nxypdkd5lgdhgqauejkthsfkkxg7vim2faxm6ym",
+    "value": {
+      "role": "compute-eb56a1fc",
+      "$type": "com.publicdomainrelay.temp.compute.vm",
+      "createdAt": "2026-07-07T05:58:02.526Z",
+      "user_data": "#cloud-config\npackages:\n  - openssh-server\n  - jq\n  - curl\n\n# Key-only root login over the websocat tunnel.\ndisable_root: false\nssh_pwauth: false\n\nwrite_files:\n  - path: /root/.ssh/authorized_keys\n    owner: root:root\n    permissions: '0600'\n    content: |\n      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBVlzJR5h7m4HtyqYe4aZLcCf9aop2D6b3iF0EPnWHG8 root@compute-eb56a1fc\n\n  - path: /etc/ssh/sshd_config.d/10-websocat.conf\n    owner: root:root\n    permissions: '0644'\n    content: |\n      # sshd is only reachable through the websocat→fedproxy tunnel.\n      ListenAddress 127.0.0.1\n      PermitRootLogin prohibit-password\n      PasswordAuthentication no\n\n  - path: /usr/local/bin/setup-websocat.sh\n    owner: root:root\n    permissions: '0755'\n    content: |\n      #!/bin/bash\n      set -x\n\n      STAMP=/var/lib/setup-websocat.done\n      [ -f \"\\${STAMP}\" ] && exit 0\n\n      retry() {\n        n=0\n        delay=5\n        until \"$@\"; do\n          n=$((n + 1))\n          echo \"command failed (attempt $n): $*; retrying in \\${delay}s\" >&2\n          sleep \"$delay\"\n        done\n      }\n\n      # fedproxy-client (fronts the websocat WebSocket listener).\n      _arch=$(uname -m)\n      case \"$_arch\" in x86_64|amd64) _arch=amd64 ;; aarch64|arm64) _arch=arm64 ;; esac\n      _os=$(uname -s | tr '[:upper:]' '[:lower:]')\n      retry sh -c \"curl -sfL 'https://github.com/publicdomainrelay/atproto-reverse-proxy/releases/download/latest/atproto-reverse-proxy_${_os}_${_arch}.tar.gz' | tar -xvz -C /usr/local/bin\"\n\n      # websocat release binary (musl-static; ws ↔ tcp bridge).\n      case \"$_arch\" in amd64) _ws_arch=x86_64 ;; arm64) _ws_arch=aarch64 ;; esac\n      retry sh -c \"curl -sfL 'https://github.com/vi/websocat/releases/download/v1.13.0/websocat.${_ws_arch}-unknown-linux-musl' -o /usr/local/bin/websocat\"\n      chmod +x /usr/local/bin/websocat\n\n      systemctl enable websocat.service fedproxy-client.service\n      systemctl start --no-block websocat.service fedproxy-client.service\n\n      touch \"\\${STAMP}\"\n\n  - path: /etc/systemd/system/websocat.service\n    owner: root:root\n    permissions: '0644'\n    content: |\n      [Unit]\n      Description=websocat ws→sshd bridge (fronted by fedproxy-client)\n      After=network-online.target sshd.service ssh.service\n      Wants=network-online.target\n\n      [Service]\n      Type=simple\n      User=root\n      # WebSocket listener on loopback :8080 → sshd on loopback :22.\n      # fedproxy-client (SERVICE=compute-eb56a1fc, PORT=8080) forwards external WS here.\n      ExecStart=/usr/local/bin/websocat --binary ws-l:127.0.0.1:8080 tcp:127.0.0.1:22\n      Restart=always\n      RestartSec=5\n      TimeoutStopSec=10\n      StandardOutput=journal\n      StandardError=journal\n\n      [Install]\n      WantedBy=multi-user.target\n\n  - path: /etc/systemd/system/setup-websocat.service\n    owner: root:root\n    permissions: '0644'\n    content: |\n      [Unit]\n      Description=First-boot websocat setup (install binaries)\n      After=network-online.target\n      Wants=network-online.target\n      ConditionPathExists=/root/secrets/digitalocean.com/serviceaccount/token\n      ConditionPathExists=!/var/lib/setup-websocat.done\n\n      [Service]\n      Type=oneshot\n      User=root\n      ExecStart=/usr/local/bin/setup-websocat.sh\n      StandardOutput=journal\n      StandardError=journal\n\n      [Install]\n      WantedBy=multi-user.target\n\n  - path: /etc/systemd/system/setup-websocat.path\n    owner: root:root\n    permissions: '0644'\n    content: |\n      [Unit]\n      Description=Watch for DO service-account token then run setup-websocat\n\n      [Path]\n      PathExists=/root/secrets/digitalocean.com/serviceaccount/token\n      Unit=setup-websocat.service\n\n      [Install]\n      WantedBy=multi-user.target\n\n  - path: /etc/systemd/system/fedproxy-client.service\n    owner: root:root\n    permissions: '0644'\n    content: |\n      [Unit]\n      Description=FedProxy Client Service\n      After=network-online.target\n      Wants=network-online.target\n\n      [Service]\n      Type=simple\n      User=root\n      WorkingDirectory=/root\n      Environment=\"SERVICE=compute-eb56a1fc\"\n      # SSH username the relay flattens into the host's handle segment. Pinning\n      # it to the did:plc yields <SERVICE>--did-plc-<key>.fedproxy.com.\n      Environment=\"HANDLE=did:plc:6vccw2ui4tk46zsytpxzes35\"\n      Environment=\"PORT=8080\"\n      Environment=\"ATPRP_URL=https://did-key-zq3shscc3ls8yczdwnyck9n9oslraggvksxxzrveedvbmaavz.localhost:62116\"\n      Environment=\"AUTH_PLUGIN=oidc\"\n      Environment=\"MARKET_ACCEPT_JSON_PATH=/root/secrets/publicdomainrelay.com/market/accept.json\"\n      ExecStart=/usr/local/bin/fedproxy-client\n      Restart=always\n      RestartSec=5\n      TimeoutStopSec=10\n      StandardOutput=journal\n      StandardError=journal\n\n      [Install]\n      WantedBy=multi-user.target\n\nruncmd:\n  - systemctl daemon-reload\n  - systemctl enable --now ssh || systemctl enable --now sshd\n  - systemctl enable setup-websocat.path\n  - systemctl start --no-block setup-websocat.path\n"
+    }
+  },
+  {
+    "source": "bidder",
+    "did": "did:plc:l2v5yribzywrncgkrh2zjpk7",
+    "collection": "com.publicdomainrelay.temp.market.offering",
+    "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.offering/3mpzwdil2nc2a",
+    "cid": "bafyreigvlbfw66zhnylqkktsxrn7piezfvblwsz2st366d3vc4zctsnizu",
+    "value": {
+      "$type": "com.publicdomainrelay.temp.market.offering",
+      "appliesTo": [
+        "com.publicdomainrelay.temp.compute.vm"
+      ],
+      "createdAt": "2026-07-07T05:58:02.513Z",
+      "endpointUrl": "https://did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost",
+      "refreshedAt": "2026-07-07T05:58:02.513Z"
+    }
+  },
+  {
+    "source": "bidder",
+    "did": "did:plc:l2v5yribzywrncgkrh2zjpk7",
+    "collection": "com.publicdomainrelay.temp.market.bid",
+    "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bid/3mpzwdilwxl2a",
+    "cid": "bafyreihvbtezemxs4yhmcdu7xldhvv47l5l3b7evzdoilxd3bxevgbiihe",
+    "value": {
+      "rfp": {
+        "cid": "bafyreigalf6jzbujgvi5kliiliir6rv2z4t44gwc4tuyi6m342pi6bhrty",
+        "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "$type": "com.publicdomainrelay.temp.market.bid",
+      "payload": {
+        "cid": "bafyreigv3jlyqwuqwedktpsai77ltsd7mzj24abnbfo6g3teks2l2ofqu4",
+        "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bids.free/3mpzwdilwxk2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "bidConfig": {
+        "cid": "bafyreibjwgsfu62ybbgc7yf5xnwadnn7fczy3lufni2xv56a27p6o3pyfm",
+        "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.compute.config.wif.simple/3mpzwdilvyc2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "createdAt": "2026-07-07T05:58:02.541Z",
+      "signatures": [
+        {
+          "cid": "bafyreibuyv7hs76fwmnrnku5qc4flrneawkcftg3u23rjvltxzirrsqewa",
+          "key": "did:key:zQ3shpqBSWzLAv36jp3nmoT7WtDHgVNF8f7ey4cwsxJXNZxNj",
+          "$type": "network.attested.signature",
+          "issuer": "did:web:did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost",
+          "signature": {
+            "$bytes": "EM+Y2yBArMUiEvF3ACWWmEQ1p+zPBmIBDhwj6aozrUFWArK9T8IVlRS9PibDig6TiRZ66XHMsk0lWWnLWd227A=="
+          }
+        }
+      ],
+      "submitAccept": "https://did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost"
+    }
+  },
+  {
+    "source": "bidder",
+    "did": "did:plc:l2v5yribzywrncgkrh2zjpk7",
+    "collection": "com.publicdomainrelay.temp.market.receipt",
+    "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.receipt/3mpzwdwway32a",
+    "cid": "bafyreidjsnqsopfeu52yljhr36zffrfzlw7nrixcojmcsv7rmp7k53mkwe",
+    "value": {
+      "bid": {
+        "cid": "bafyreihvbtezemxs4yhmcdu7xldhvv47l5l3b7evzdoilxd3bxevgbiihe",
+        "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bid/3mpzwdilwxl2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "cid": "bafyreibukt6fzqrjrpugdseayt2ehvmu77wtxpsc6hnfnvwncdqtlbyrom",
+      "rfp": {
+        "cid": "bafyreigalf6jzbujgvi5kliiliir6rv2z4t44gwc4tuyi6m342pi6bhrty",
+        "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "$type": "com.publicdomainrelay.temp.market.receipt",
+      "accept": {
+        "cid": "bafyreifesc72g5lgb2gnw7tlvfpjusyuhn3x47zdwrwhravk25camhqm3a",
+        "uri": "at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.accept/3mpzwdwvz632a",
+        "$type": "com.atproto.repo.strongRef"
+      },
+      "payload": null,
+      "createdAt": "2026-07-07T05:58:17.560Z",
+      "signatures": [
+        {
+          "cid": "bafyreifdhzju3knmbhpdktw4bxltsrtegcovsh6ubanpp6rbcw4i5caz2i",
+          "key": "did:key:zQ3shpqBSWzLAv36jp3nmoT7WtDHgVNF8f7ey4cwsxJXNZxNj",
+          "$type": "network.attested.signature",
+          "issuer": "did:web:did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost",
+          "signature": {
+            "$bytes": "sjyr8QdDAW3FkEBMW8o/q5B/TrLddG+R0PCN3w1YWM1LzzPGJb+VCXAvfD2PdGg73GEgyKv0ZCuuMzEzFG2hxQ=="
+          }
+        }
+      ],
+      "submitEvent": "https://did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost"
+    }
+  },
+  {
+    "source": "bidder",
+    "did": "did:plc:l2v5yribzywrncgkrh2zjpk7",
+    "collection": "com.publicdomainrelay.temp.auth.allowlist.rbacDid",
+    "uri": "at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.auth.allowlist.rbacDid/3mpzwdikyos2a",
+    "cid": "bafyreifjorgbc4ipefvxwkbbn2zo2dmll5tqjrpe355nziuth2ce22m3n4",
+    "value": {
+      "$type": "com.publicdomainrelay.temp.auth.allowlist.rbacDid",
+      "allowed": {
+        "allowSelf": [
+          "did:plc:l2v5yribzywrncgkrh2zjpk7"
+        ]
+      },
+      "protects": {
+        "allowSelf": {
+          "scope": "account.auth",
+          "service": ""
+        }
+      },
+      "createdAt": "2026-07-07T05:58:02.511Z"
+    }
+  }
+]

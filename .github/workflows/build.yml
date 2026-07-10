@@ -44,10 +44,10 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }} atproto-market/hono-policy/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }} atproto-market/hono-plc/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }} hono-pds/main.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-relayer/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-subscriber-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }} hono-compute-provider/hono-compute-provider/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }} deno-worker-sandbox/hono-compute-deno/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }} deno-worker-sandbox/hono-sandbox/mod.ts
@@ -64,10 +64,10 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }} atproto-market/hono-policy/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }} atproto-market/hono-plc/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }} hono-pds/main.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-relayer/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-subscriber-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }} did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }} hono-compute-provider/hono-compute-provider/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }} deno-worker-sandbox/hono-compute-deno/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }} deno-worker-sandbox/hono-sandbox/mod.ts
@@ -84,10 +84,10 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }}.exe atproto-market/hono-policy/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }}.exe atproto-market/hono-plc/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }}.exe hono-pds/main.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-relayer-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-relayer/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-relay-subscriber-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-tunnel-subscriber/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }}.exe did-key-relay/hono-did-key-relay-tunnel/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-${{ matrix.suffix }}.exe did-key-ingress-proxy/hono-did-key-ingress-proxy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-subscriber-${{ matrix.suffix }}.exe did-key-ingress-proxy/hono-did-key-ingress-proxy-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-subscriber-${{ matrix.suffix }}.exe did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel-subscriber/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/tunnel-${{ matrix.suffix }}.exe did-key-ingress-proxy/hono-did-key-ingress-proxy-tunnel/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-provider-${{ matrix.suffix }}.exe hono-compute-provider/hono-compute-provider/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-compute-deno-${{ matrix.suffix }}.exe deno-worker-sandbox/hono-compute-deno/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }}.exe deno-worker-sandbox/hono-sandbox/mod.ts

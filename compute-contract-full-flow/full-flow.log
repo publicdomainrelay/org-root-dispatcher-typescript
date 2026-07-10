@@ -1,0 +1,19 @@
+2026-07-07T05:58:02.476Z === compute-contract-full-flow ===
+2026-07-07T05:58:02.476Z Starting dispatcher, fake PLC, bidder, requester...
+2026-07-07T05:58:02.477Z dispatcher listening on localhost:62116
+2026-07-07T05:58:02.477Z fake PLC listening on http://localhost:62117
+2026-07-07T05:58:02.504Z bidder PDS ready: did=did:plc:l2v5yribzywrncgkrh2zjpk7
+2026-07-07T05:58:02.508Z provider relay ready: proxyRef=did:web:did-key-zq3shcavkjvxwmxcta8jrily284p8cqq7j5rmxkjfidfaj1ck.localhost
+2026-07-07T05:58:02.514Z bidder ready: did=did:plc:l2v5yribzywrncgkrh2zjpk7 proxyRef=did:web:did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost
+2026-07-07T05:58:02.519Z requester ready: did=did:plc:6vccw2ui4tk46zsytpxzes35 proxyRef=did:web:did-key-zq3shscc3ls8yczdwnyck9n9oslraggvksxxzrveedvbmaavz.localhost
+2026-07-07T05:58:02.519Z === starting compute contract flow ===
+2026-07-07T05:58:02.519Z requester did: did:plc:6vccw2ui4tk46zsytpxzes35
+2026-07-07T05:58:02.519Z bidder did: did:plc:l2v5yribzywrncgkrh2zjpk7
+2026-07-07T05:59:20.105Z contract result: {"event":"compute_request_complete","vmUri":"at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.compute.vm/3mpzwdilhdk2a","vmCid":"bafyreihfivdmlguypz4nxypdkd5lgdhgqauejkthsfkkxg7vim2faxm6ym","rfpUri":"at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a","rfpCid":"bafyreigalf6jzbujgvi5kliiliir6rv2z4t44gwc4tuyi6m342pi6bhrty","acceptUri":"at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.accept/3mpzwdwvz632a","acceptCid":"bafyreifesc72g5lgb2gnw7tlvfpjusyuhn3x47zdwrwhravk25camhqm3a","bidUri":"at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bid/3mpzwdilwxl2a","bidCid":"bafyreihvbtezemxs4yhmcdu7xldhvv47l5l3b7evzdoilxd3bxevgbiihe","winnerDid":"did:plc:l2v5yribzywrncgkrh2zjpk7","receiptUri":"at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.receipt/3mpzwdwway32a","receiptCid":"bafyreidjsnqsopfeu52yljhr36zffrfzlw7nrixcojmcsv7rmp7k53mkwe","submitEventRef":"https://did-key-zq3shsprdpsumjabky57zuy6byhdipea2pfukykt8itz9zur7.localhost","receiptOk":true,"bids":1,"sshReady":false}
+2026-07-07T05:59:20.106Z record: requester com.publicdomainrelay.temp.market.rfp at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.rfp/3mpzwdilics2a
+2026-07-07T05:59:20.107Z record: requester com.publicdomainrelay.temp.market.accept at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.market.accept/3mpzwdwvz632a
+2026-07-07T05:59:20.108Z record: requester com.publicdomainrelay.temp.compute.vm at://did:plc:6vccw2ui4tk46zsytpxzes35/com.publicdomainrelay.temp.compute.vm/3mpzwdilhdk2a
+2026-07-07T05:59:20.108Z record: bidder com.publicdomainrelay.temp.market.offering at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.offering/3mpzwdil2nc2a
+2026-07-07T05:59:20.109Z record: bidder com.publicdomainrelay.temp.market.bid at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.bid/3mpzwdilwxl2a
+2026-07-07T05:59:20.109Z record: bidder com.publicdomainrelay.temp.market.receipt at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.market.receipt/3mpzwdwway32a
+2026-07-07T05:59:20.110Z record: bidder com.publicdomainrelay.temp.auth.allowlist.rbacDid at://did:plc:l2v5yribzywrncgkrh2zjpk7/com.publicdomainrelay.temp.auth.allowlist.rbacDid/3mpzwdikyos2a

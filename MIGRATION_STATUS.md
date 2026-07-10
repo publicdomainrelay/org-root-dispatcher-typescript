@@ -39,9 +39,9 @@
 | — (new ABC layer) | `hono-compute-provider/lib/oidc-issuer` | impl |
 | `lib/oidc-helper` | `hono-compute-provider/lib/abc/oidc-issuer` + `lib/oidc-issuer` | abc+impl |
 | `lib/rbac-helper` | `hono-compute-provider/lib/rbac-atproto` | impl |
-| `lib/xrpc-relay` | `did-key-relay/lib/did-key-relay-relayer-xrpc` + `did-key-relay/lib/did-key-relay-subscriber-xrpc` | impl |
-| `lib/hono-factory-xrpc-relay` | `did-key-relay/lib/hono-factory-did-key-relay-relayer-xrpc` | factory |
-| `lib/hono-factory-xrpc-subscriber` | `did-key-relay/lib/hono-factory-did-key-relay-subscriber-xrpc` | factory |
+| `lib/xrpc-relay` | `did-key-relay/lib/did-key-ingress-proxy-xrpc` + `did-key-relay/lib/did-key-ingress-proxy-subscriber-xrpc` | impl |
+| `lib/hono-factory-xrpc-relay` | `did-key-relay/lib/hono-factory-did-key-ingress-proxy-xrpc` | factory |
+| `lib/hono-factory-xrpc-subscriber` | `did-key-relay/lib/hono-factory-did-key-ingress-proxy-subscriber-xrpc` | factory |
 | `lib/hono-factory-atproto-repo` | `hono-pds/lib/hono-factory-atproto-repo-deno` | factory |
 | `lib/datastore-package` | `hono-jsr/lib/abc/package-store` | abc |
 | `lib/datastore-local-fs` | `hono-jsr/lib/package-store-local-fs` | impl |

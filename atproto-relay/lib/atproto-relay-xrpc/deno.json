@@ -7,6 +7,7 @@
     "@publicdomainrelay/atproto-relay-abc": "jsr:@publicdomainrelay/atproto-relay-abc@^0",
     "@publicdomainrelay/atproto-relay-common": "jsr:@publicdomainrelay/atproto-relay-common@^0",
     "@publicdomainrelay/event-bus": "jsr:@publicdomainrelay/event-bus@^0.1",
+    "@publicdomainrelay/backlog-sequencer": "jsr:@publicdomainrelay/backlog-sequencer@^0",
     "@publicdomainrelay/logger": "jsr:@publicdomainrelay/logger@^0"
   }
 }

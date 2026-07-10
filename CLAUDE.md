@@ -211,7 +211,7 @@ Litmus test "may this live in abc": can you `new` it / call it in a unit test
 with no mocks, no fake timers, no network? Yes = belongs here.
 
 ```ts
-import type { RelayResponse } from "@publicdomainrelay/did-key-relay-common";
+import type { RelayResponse } from "@publicdomainrelay/did-key-ingress-proxy-common";
 
 export interface NonceStore {
   issue(key: string): string;
@@ -251,11 +251,11 @@ Abstract interface from `lib/abc` becomes live thing.
 - Implements ABC interfaces -- factory fn returns something satisfying `NonceStore`.
 - Uses runtime: `setInterval`, `crypto.getRandomValues`, `Deno.unrefTimer`, `fetch`, sockets.
 - Depends on `lib/abc` (interface types) + `lib/common` (utils).
-- Named `${concept}-${transport}`, e.g. `did-key-relay-relayer-xrpc`. Second
-  transport = sibling package `did-key-relay-relayer-grpc`, NOT a flag inside.
+- Named `${concept}-${transport}`, e.g. `did-key-ingress-proxy-xrpc`. Second
+  transport = sibling package `did-key-ingress-proxy-grpc`, NOT a flag inside.
 
 ```ts
-import type { NonceStore, VerifyResult } from "@publicdomainrelay/did-key-relay-relayer-abc";
+import type { NonceStore, VerifyResult } from "@publicdomainrelay/did-key-ingress-proxy-abc";
 
 export function createNonceStore(ttlMs: number): NonceStore {
   const entries = new Map<string, { key: string; expiresAt: number }>();
@@ -299,9 +299,9 @@ exposes factory fn. Composed, never subclassed -- no "extend further" layer.
 ```ts
 import { createFactory } from "@hono/hono/factory";
 import { cors } from "@hono/hono/cors";
-import { log, hostnameToDid } from "@publicdomainrelay/did-key-relay-common";
-import { RelayState } from "@publicdomainrelay/did-key-relay-relayer-abc";
-import { createNonceStore } from "@publicdomainrelay/did-key-relay-relayer-xrpc";
+import { log, hostnameToDid } from "@publicdomainrelay/did-key-ingress-proxy-common";
+import { RelayState } from "@publicdomainrelay/did-key-ingress-proxy-abc";
+import { createNonceStore } from "@publicdomainrelay/did-key-ingress-proxy-xrpc";
 
 export interface RelayFactoryOptions {
   hostname: string;
@@ -425,7 +425,7 @@ CLI flag  ->  per-option env var  ->  config.json  ->  cli-args-env.json default
 `${NAME}` = CLI dir name, hyphens -> underscores, uppercased:
 
 - `hono-http-static` -> `CONFIG_PATH_HONO_HTTP_STATIC`
-- `hono-did-key-relay-relayer` -> `CONFIG_PATH_HONO_DID_KEY_RELAY_RELAYER`
+- `hono-did-key-ingress-proxy` -> `CONFIG_PATH_HONO_DID_KEY_RELAY_RELAYER`
 
 Point it at replacement `config.json`:
 
@@ -507,16 +507,16 @@ shared imports in root `imports`.
 {
   "nodeModulesDir": "auto",
   "workspace": [
-    "./lib/common/did-key-relay",
+    "./lib/common/did-key-ingress-proxy",
     "./lib/common/cli-args-env",
-    "./lib/abc/did-key-relay-relayer",
-    "./lib/abc/did-key-relay-subscriber",
-    "./lib/did-key-relay-relayer-xrpc",
-    "./lib/did-key-relay-subscriber-xrpc",
-    "./lib/hono-factory-did-key-relay-relayer-xrpc",
-    "./lib/hono-factory-did-key-relay-subscriber-xrpc",
-    "./hono-did-key-relay-relayer",
-    "./hono-did-key-relay-subscriber"
+    "./lib/abc/did-key-ingress-proxy",
+    "./lib/abc/did-key-ingress-proxy-subscriber",
+    "./lib/did-key-ingress-proxy-xrpc",
+    "./lib/did-key-ingress-proxy-subscriber-xrpc",
+    "./lib/hono-factory-did-key-ingress-proxy-xrpc",
+    "./lib/hono-factory-did-key-ingress-proxy-subscriber-xrpc",
+    "./hono-did-key-ingress-proxy",
+    "./hono-did-key-ingress-proxy-subscriber"
   ],
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.19"
@@ -534,12 +534,12 @@ per-package `imports` using `jsr:` for project-local.
 
 ```json
 {
-  "name": "@publicdomainrelay/did-key-relay-relayer-abc",
+  "name": "@publicdomainrelay/did-key-ingress-proxy-abc",
   "version": "0.0.0",
   "license": "Unlicense",
   "exports": "./mod.ts",
   "imports": {
-    "@publicdomainrelay/did-key-relay-common": "jsr:@publicdomainrelay/did-key-relay-common@^0"
+    "@publicdomainrelay/did-key-ingress-proxy-common": "jsr:@publicdomainrelay/did-key-ingress-proxy-common@^0"
   }
 }
 ```
@@ -561,8 +561,8 @@ runtime imports + `compile.include` for JSON config.
   "license": "Unlicense",
   "imports": {
     "@publicdomainrelay/cli-args-env": "jsr:@publicdomainrelay/cli-args-env@^0",
-    "@publicdomainrelay/did-key-relay-common": "jsr:@publicdomainrelay/did-key-relay-common@^0",
-    "@publicdomainrelay/hono-factory-did-key-relay-relayer-xrpc": "jsr:@publicdomainrelay/hono-factory-did-key-relay-relayer-xrpc@^0"
+    "@publicdomainrelay/did-key-ingress-proxy-common": "jsr:@publicdomainrelay/did-key-ingress-proxy-common@^0",
+    "@publicdomainrelay/hono-factory-did-key-ingress-proxy-xrpc": "jsr:@publicdomainrelay/hono-factory-did-key-ingress-proxy-xrpc@^0"
   },
   "compile": {
     "include": ["cli-args-env.json", "config.json"]
@@ -602,8 +602,8 @@ Import through bare specifier in `imports` (`@publicdomainrelay/...`,
   `shutdown()` via SIGINT/SIGTERM in CLI only
 - Provider array: each provider owns its relay + serve + OIDC issuer
   (OIDC mounted on provider's serve in `serve.onConnected`)
-- `cliCreateXrpcRelay()` — sync constructor, defers WS connect to
-  `onServe(fetch)`, `proxyRef` server-assigned → lazy-read everywhere
+- `cliCreateIngress()` — sync constructor, defers WS connect to
+  `onServe(fetch)`, `ingressRef` server-assigned → lazy-read everywhere
 - `createATProto(...)` — single `atproto` instance passed to providers + bidder
 - `createMarketBidder({ providers, ... })` — owns `activeContracts` +
   provider lifecycle (setup/teardown/merge callbacks)
@@ -612,7 +612,7 @@ Import through bare specifier in `imports` (`@publicdomainrelay/...`,
 ## CLI patterns (NEVER)
 
 - Raw `Deno.serve()` in CLI or lib — use `createServe()`
-- Precompute/eager-read `proxyRef` — always lazy via `() => relay.proxyRef`
+- Precompute/eager-read `ingressRef` — always lazy via `() => relay.ingressRef`
 - I/O in lib (`Deno.serve`, `Deno.addSignalListener`, `WebSocket` connect,
   `Deno.env.get`) — I/O only in impl layer or CLI
 - OIDC bolted on bidder app post-hoc — each provider mounts own OIDC on

@@ -34,7 +34,7 @@ ATProto-native Attested Workload Identity for federated multi-org compute:
 | Submodule | Old hash | New hash | Delta | What changed |
 |-----------|----------|----------|-------|-------------|
 | `deno-worker-sandbox` | `07c0b72` | `c3e79b9`-dirty | 2 commits | Common naming, cross-concept decoupling. **-dirty**: local uncommitted changes inside submodule |
-| `did-key-relay` | `b2fd1c6` | `f62e823` | 1 commit | ABC purity, bare specifiers, config defaults |
+| `did-key-ingress-proxy` | `b2fd1c6` | `f62e823` | 1 commit | ABC purity, bare specifiers, config defaults |
 | `hono-compute-provider` | `d3c1992` | `2752178` | 1 commit | ABC purity, naming, cross-concept decoupling |
 | `hono-jsr` | `f7aac36` | `1fcd096` | 1 commit | Rename packages, fix imports |
 | `hono-pds` | `46068af` | `b8ebd93` | 1 commit | Delete duplicate EventBus, fix CLI config |

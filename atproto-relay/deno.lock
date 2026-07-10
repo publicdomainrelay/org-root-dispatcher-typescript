@@ -6,7 +6,9 @@
     "jsr:@cliffy/internal@1.2.1": "1.2.1",
     "jsr:@cliffy/table@1.2.1": "1.2.1",
     "jsr:@hono/hono@4": "4.12.24",
+    "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/fmt@^1.0.10": "1.0.10",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@std/text@^1.0.19": "1.0.19"
   },
   "jsr": {
@@ -39,8 +41,17 @@
     "@hono/hono@4.12.24": {
       "integrity": "a74a40f06ae6704ddd0e8e576f6da9d34666c3e1e0f5412a2c1ff800ffd092f4"
     },
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/fmt@1.0.10": {
       "integrity": "90dfba288802ac6de82fb31d0917eb9e4450b9925b954d5e51fc29ac07419db5"
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
     "@std/text@1.0.19": {
       "integrity": "003a0e032d360e8c3a4e0410fb792c77a66bd6553fee9d60c6ec1bce30d29223"
@@ -61,13 +72,15 @@
       },
       "lib/abc/atproto-relay": {
         "dependencies": [
-          "jsr:@publicdomainrelay/atproto-relay-common@0"
+          "jsr:@publicdomainrelay/atproto-relay-common@0",
+          "jsr:@publicdomainrelay/firehose-common@0"
         ]
       },
       "lib/atproto-relay-xrpc": {
         "dependencies": [
           "jsr:@publicdomainrelay/atproto-relay-abc@0",
           "jsr:@publicdomainrelay/atproto-relay-common@0",
+          "jsr:@publicdomainrelay/backlog-sequencer@0",
           "jsr:@publicdomainrelay/event-bus@0.1",
           "jsr:@publicdomainrelay/logger@0"
         ]
@@ -77,6 +90,7 @@
           "jsr:@publicdomainrelay/atproto-relay-abc@0",
           "jsr:@publicdomainrelay/atproto-relay-common@0",
           "jsr:@publicdomainrelay/atproto-relay-xrpc@0",
+          "jsr:@publicdomainrelay/firehose-common@0",
           "jsr:@publicdomainrelay/hono-error-middleware@0.1",
           "jsr:@publicdomainrelay/hostname-helpers@0.1",
           "jsr:@publicdomainrelay/logger@0"
@@ -84,6 +98,11 @@
       }
     },
     "links": {
+      "jsr:@publicdomainrelay/backlog-sequencer@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/event-bus@0.1"
+        ]
+      },
       "jsr:@publicdomainrelay/cli-args-env@0.1.0": {
         "dependencies": [
           "jsr:@cliffy/command@^1.0.0-rc.7"
@@ -92,6 +111,7 @@
       "jsr:@publicdomainrelay/compute-spa-keypair-noble@0.0.0": {},
       "jsr:@publicdomainrelay/compute-spa-relay-client@0.0.0": {},
       "jsr:@publicdomainrelay/event-bus@0.1.0": {},
+      "jsr:@publicdomainrelay/firehose-common@0.0.0": {},
       "jsr:@publicdomainrelay/firehose-watcher-abc@0.0.0": {
         "dependencies": [
           "jsr:@publicdomainrelay/logger@0"
@@ -104,6 +124,7 @@
       },
       "jsr:@publicdomainrelay/firehose-watcher-subscriberepos@0.0.0": {
         "dependencies": [
+          "jsr:@publicdomainrelay/firehose-common@0",
           "jsr:@publicdomainrelay/firehose-watcher-abc@0"
         ]
       },
@@ -137,6 +158,11 @@
       "jsr:@publicdomainrelay/serve@0.0.0": {
         "dependencies": [
           "jsr:@hono/hono@4",
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/ws-reconnect@0.0.0": {
+        "dependencies": [
           "jsr:@publicdomainrelay/logger@0"
         ]
       }

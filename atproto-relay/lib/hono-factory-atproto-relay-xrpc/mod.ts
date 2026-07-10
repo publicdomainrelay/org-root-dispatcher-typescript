@@ -5,11 +5,11 @@ import { registerErrorMiddleware } from "@publicdomainrelay/hono-error-middlewar
 import { createLogger, type LoggerInterface } from "@publicdomainrelay/logger";
 import { hostnameToDid, hostnameOnly } from "@publicdomainrelay/hostname-helpers";
 import { now } from "@publicdomainrelay/atproto-relay-common";
+import { splitRecordPath } from "@publicdomainrelay/firehose-common";
 import type {
   HostStore,
   AccountStore,
   RelaySequencer,
-  RelayFrame,
   CollectionIndex,
 } from "@publicdomainrelay/atproto-relay-abc";
 import {
@@ -25,6 +25,7 @@ export interface RelayFactoryOptions {
   hostname: string;
   kv?: Deno.Kv;
   log?: LoggerInterface;
+  sequencer?: RelaySequencer;
 }
 
 export interface RelayFactory {
@@ -43,7 +44,7 @@ export function createRelayFactory(opts: RelayFactoryOptions): RelayFactory {
     return kvPromise;
   }
 
-  const sequencer = createRelaySequencer();
+  const sequencer = opts.sequencer ?? createRelaySequencer();
   const app = new Hono();
 
   app.use("*", cors());
@@ -123,15 +124,12 @@ export function createRelayFactory(opts: RelayFactoryOptions): RelayFactory {
         hostStore.upsert(pdsHostname, { did, cursor: frame.seq, lastSeen: Date.now(), state: "active" }).catch(() => {});
         accountStore.upsert(frame.repo, { hostHostname: pdsHostname, rev: frame.rev }).catch(() => {});
         for (const op of frame.ops) {
-          if (op.path) {
-            const slashIdx = op.path.indexOf("/");
-            if (slashIdx > 0) {
-              const collection = op.path.slice(0, slashIdx);
-              collectionIndex.add(collection, frame.repo).catch(() => {});
-            }
+          const parsed = splitRecordPath(op.path);
+          if (parsed) {
+            collectionIndex.add(parsed.collection, frame.repo).catch(() => {});
           }
         }
-        sequencer.append(pdsHostname, frame);
+        sequencer.append(frame);
       },
     });
 
@@ -145,32 +143,27 @@ export function createRelayFactory(opts: RelayFactoryOptions): RelayFactory {
 
   app.get(
     "/xrpc/com.atproto.sync.subscribeRepos",
-    upgradeWebSocket((_c) => ({
-      onOpen(_evt, ws) {
-        (async () => {
-          try {
-            const serialize = (f: RelayFrame) => {
-              const blocks = f.frame.blocks instanceof Uint8Array
-                ? Array.from(f.frame.blocks)
-                : f.frame.blocks;
-              return JSON.stringify({
-                ...f,
-                frame: { ...f.frame, blocks },
-              });
-            };
-            for await (const frame of sequencer.backfill()) {
-              ws.send(serialize(frame));
+    upgradeWebSocket((c) => {
+      const cursorQ = c.req.query("cursor");
+      const parsed = cursorQ === undefined ? undefined : Number(cursorQ);
+      const since = parsed !== undefined && Number.isFinite(parsed) ? parsed : undefined;
+      return {
+        onOpen(_evt, ws) {
+          (async () => {
+            try {
+              for await (const frame of sequencer.backfill(since)) {
+                ws.send(JSON.stringify(frame));
+              }
+              for await (const frame of sequencer.live()) {
+                ws.send(JSON.stringify(frame));
+              }
+            } catch {
             }
-            for await (const frame of sequencer.live()) {
-              ws.send(serialize(frame));
-            }
-          } catch {
-            // client disconnected
-          }
-        })();
-      },
-      onClose() {},
-    })),
+          })();
+        },
+        onClose() {},
+      };
+    }),
   );
 
   app.get("/xrpc/com.atproto.sync.getRepo", async (c) => {

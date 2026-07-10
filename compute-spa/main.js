@@ -189,7 +189,7 @@ function relayB64decode(s) {
 }
 
 /**
- * Browser-native WebSocket relay client connecting to the did-key-relay
+ * Browser-native WebSocket relay client connecting to the xrpc relay
  * dispatcher at xrpc.fedproxy.com. Handles nonce/registration, request/
  * response frames, and TTYD credential registration.
  */
