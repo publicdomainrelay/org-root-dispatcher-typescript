@@ -3,6 +3,10 @@
 Both operators scan the QR codes from their own processes using the
 did-key-associator webapp at `https://qr.fedfork.com`.
 
+```bash
+git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
+```
+
 **Terminal 1 — Bidder:**
 
 > Bids on compute contracts
@@ -31,33 +35,6 @@ deno run -A request-vm-ssh/mod.ts \
   --policy-mode tangled-vouch \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
-```
-
-**Binaries also available**
-
-```bash
-# Linux
-curl -fsSLo request-vm-ssh \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-linux-x64
-curl -fsSLo hono-bidder \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/hono-bidder-linux-x64
-
-# Windows
-curl -fsSLo request-vm-ssh.exe \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-windows-x64.exe
-curl -fsSLo hono-bidder.exe \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/hono-bidder-windows-x64.exe
-
-# MacOS
-curl -fsSLo request-vm-ssh \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/request-vm-ssh-macos-arm64
-curl -fsSLo hono-bidder \
-  https://github.com/publicdomainrelay/org-root-dispatcher-typescript/releases/latest/download/hono-bidder-macos-arm64
-
-chmod +x request-vm-ssh hono-bidder
-
-./request-vm-ssh --help
-./hono-bidder --help
 ```
 
 ## Step-by-step records (YAML — on wire these are JSON in ATProto repos)
