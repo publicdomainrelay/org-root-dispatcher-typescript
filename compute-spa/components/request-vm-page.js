@@ -4,7 +4,7 @@ import {
   OFFERING_NSID, BADGE_BLUE_KEYS_NSID,
   createRecord, saveVM, generatePassword, vmServiceName, didPlcKey,
   terminalUrl, generateRelayKeypair, loadRelayKeypair, getAttestationKeypair, registerDidPlc,
-  XRPC_DISPATCHER_HOST, FEDPROXY_HOST, RelayClient, createRelayKeypairAdapter,
+  getFedproxyHost, RelayClient, createRelayKeypairAdapter,
   signAttestation,
 } from "../main.js";
 import { createEphemeralPds } from "../lib/ephemeral-pds.js";
@@ -843,7 +843,7 @@ export class RequestVmPage extends HTMLElement {
               role_name: serviceName,
               definition: {
                 aud: `api://ATProto?actx=${didPlc}`,
-                iss: `did:web:${FEDPROXY_HOST}`,
+                iss: `did:web:${getFedproxyHost()}`,
                 sub: `actx:default:plc:${plcKey}:role:${serviceName}`,
                 policies: [`${serviceName}-ssh-key-register`],
               },

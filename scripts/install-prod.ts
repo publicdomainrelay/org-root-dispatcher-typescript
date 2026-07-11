@@ -180,7 +180,7 @@ const ENV_FILES: EnvDef[] = [
     path: "atproto-market/hono-bidder/bidder.env",
     root: "org",
     vars: [
-      ["INGRESS_PROXY_HOST", "xrpc.fedproxy.com"],
+      ["TRANSPORT", "iroh"],
       ["RELAY_URL", "https://relay.mini-cloud-0002.chadig.com"],
       ["PLC_DIRECTORY_URL", "https://plc.directory"],
       ["COMPUTE_PROVIDER_LOCAL_CONTAINER_MODE", "vm"],

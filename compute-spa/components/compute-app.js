@@ -1,4 +1,4 @@
-import { initSession, doLogin, log, RelayClient, generateRelayKeypair, loadRelayKeypair, createRelayKeypairAdapter, XRPC_DISPATCHER_HOST, BADGE_BLUE_KEYS_NSID } from '../main.js';
+import { initSession, doLogin, log, RelayClient, generateRelayKeypair, loadRelayKeypair, createRelayKeypairAdapter, getXrpcDispatcherHost, BADGE_BLUE_KEYS_NSID } from '../main.js';
 import { createServiceAuthJWT } from '../lib/service-auth.js';
 import './request-vm-page.js';
 import './saved-vms-page.js';
@@ -192,7 +192,7 @@ export class ComputeApp extends HTMLElement {
         return createServiceAuthJWT({
           privateKeyHex: kp.privateKeyHex,
           iss: kp.did, // did:key:z... (key encoded directly)
-          aud: `did:web:${XRPC_DISPATCHER_HOST}`,
+          aud: `did:web:${getXrpcDispatcherHost()}`,
           lxm,
         });
       } catch (err) {

@@ -52,7 +52,8 @@ const PLACEHOLDER = {
  */
 export function buildDefaultUserData(ctx) {
   const { vmName, serviceName, didPlc, didPlcKey, xrpcRelaySubdomain, sshHandle } = ctx;
-  const xrpcRelayFqdn = `${xrpcRelaySubdomain}.xrpc.fedproxy.com`;
+  const relayHost = ctx.xrpcDispatcherHost || 'xrpc.fedproxy.com';
+  const xrpcRelayFqdn = `${xrpcRelaySubdomain}.${relayHost}`;
   return `#cloud-config
 packages:
   - tmux

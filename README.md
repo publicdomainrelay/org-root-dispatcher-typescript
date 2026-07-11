@@ -313,9 +313,21 @@ deno run -A hono-bidder/mod.ts \
 
 ```bash
 cd atproto-market
+# Default: --transport iroh (P2P), no fedproxy host needed
 deno run -A request-vm-ssh/mod.ts \
   --policy-mode only_me \
   --bid-window-sec 3 \
+  --private-key-hex-path ~/Documents/requester-private-key.hex \
+  --pds-state-path ~/Documents/requester-pds-state.db \
+  --exec "echo hello && uname -a"
+
+# With fedproxy transport (explicit relay host required)
+deno run -A request-vm-ssh/mod.ts \
+  --transport fedproxy \
+  --policy-mode only_me \
+  --bid-window-sec 3 \
+  --ingress-proxy-host xrpc.fedproxy.com \
+  --fedproxy-host fedproxy.com \
   --private-key-hex-path ~/Documents/requester-private-key.hex \
   --pds-state-path ~/Documents/requester-pds-state.db \
   --exec "echo hello && uname -a"
@@ -410,7 +422,7 @@ cd did-key-ingress-proxy
 deno run -A hono-did-key-ingress-proxy/mod.ts \
   --hostname localhost --port 5555
 ```
-Options: `--hostname` (default xrpc.fedproxy.com), `--port` (default 8080), `--relay-timeout-ms` (30000), `--nonce-ttl-ms` (60000), `--additional-hosts`, `--unix-socket`.
+Options: `--hostname` (required, no default), `--port` (default 8080), `--relay-timeout-ms` (30000), `--nonce-ttl-ms` (60000), `--additional-hosts`, `--unix-socket`.
 
 ### PDS (AT Protocol Personal Data Server)
 
@@ -613,7 +625,7 @@ CONFIG_PATH_HONO_MACOS_RUNNER_DESKTOP=/path/to/config.json \
 tail -n 9999999 -F /tmp/deno-macos-runner-desktop.log | jq -rR --unbuffered '(fromjson? // .)'
 ```
 Uses `deno desktop` (not `deno run` — requires Deno Desktop runtime for `Deno.BrowserWindow`, `Deno.Tray`, `Deno.TrayPanel`).
-Options: `--service-name`, `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host` (xrpc.fedproxy.com), `--plc-directory-url`, `--firehose-url`, `--offering-refresh-sec` (300), `--skip-market`.
+Options: `--service-name`, `--storage-dir`, `--state-path`, `--oauth-client-id`, `--oauth-redirect-uri`, `--dispatcher-host` (required, no default), `--plc-directory-url`, `--firehose-url`, `--offering-refresh-sec` (300), `--skip-market`.
 
 ### Desktop Bidder (cross-platform web UI)
 

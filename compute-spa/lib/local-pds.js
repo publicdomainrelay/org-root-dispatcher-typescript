@@ -6,7 +6,7 @@ import { createRepoFactory } from '@publicdomainrelay/hono-factory-atproto-repo-
 import { MemoryStorage, signServiceAuth } from '@publicdomainrelay/atproto-repo-deno';
 import { nextTid } from '@publicdomainrelay/atproto-repo-common';
 import { createGenesisOp, PlcClient } from '@publicdomainrelay/did-plc';
-import { log } from '../main.js';
+import { log, getXrpcDispatcherHost } from '../main.js';
 
 const KEYPAIR_STORAGE_KEY = 'relay:keypair'; // shared with relay
 const PLC_DIRECTORY_URL = 'https://plc.directory';
@@ -87,7 +87,7 @@ export async function startLocalPds() {
   // Service auth: sign any lxm ourselves (we ARE the PDS)
   async function getServiceAuth(lxm) {
     const jwt = await signServiceAuth(signer, {
-      aud: `did:web:xrpc.fedproxy.com`,
+      aud: `did:web:${getXrpcDispatcherHost() || 'xrpc.fedproxy.com'}`,
       iss: plcDid,
       exp: Math.floor(Date.now() / 1000) + 300,
       lxm,

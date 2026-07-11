@@ -30,9 +30,23 @@ const CRUD_SCOPE_NSIDS = [
   BADGE_BLUE_KEYS_NSID,
 ];
 
-/* ── fedproxy host constants ── */
-export const FEDPROXY_HOST = 'fedproxy.com';
-export const XRPC_DISPATCHER_HOST = 'xrpc.fedproxy.com';
+/* ── fedproxy host constants ──
+   Override at runtime via window.PDR_CONFIG = { fedproxyHost, xrpcDispatcherHost }
+   or via URL query params: ?fedproxy-host=...&xrpc-dispatcher-host=... */
+function _pdrConfig() {
+  const q = new URLSearchParams(window.location.search);
+  const w = window.PDR_CONFIG || {};
+  return {
+    fedproxyHost: q.get('fedproxy-host') || w.fedproxyHost || null,
+    xrpcDispatcherHost: q.get('xrpc-dispatcher-host') || w.xrpcDispatcherHost || null,
+  };
+}
+export function getFedproxyHost() { return _pdrConfig().fedproxyHost; }
+export function getXrpcDispatcherHost() { return _pdrConfig().xrpcDispatcherHost; }
+// Legacy constant exports — use the getter functions instead. These are null
+// when no host is configured (iroh transport default).
+export const FEDPROXY_HOST = null;
+export const XRPC_DISPATCHER_HOST = null;
 
 /* ── Terminal helpers ── */
 
@@ -53,7 +67,7 @@ export function vmServiceName(vmRole, handle) {
 
 /** URL the terminal button opens once the VM is ready. */
 export function terminalUrl(vmRole, handle, token) {
-  const base = `https://${vmServiceName(vmRole, handle)}.${FEDPROXY_HOST}`;
+  const base = `https://${vmServiceName(vmRole, handle)}.${getFedproxyHost()}`;
   return token ? `${base}/#token=${encodeURIComponent(token)}` : base;
 }
 
@@ -243,7 +257,7 @@ export class RelayClient {
       const did = this.#keypair.did();
 
       const url =
-        `wss://${XRPC_DISPATCHER_HOST}/xrpc/${SUBSCRIBE_NSID}?registration=${
+        `wss://${getXrpcDispatcherHost()}/xrpc/${SUBSCRIBE_NSID}?registration=${
           encodeURIComponent(registration)
         }&did=${encodeURIComponent(did)}&service_auth=${
           encodeURIComponent(subscribeToken)
@@ -357,7 +371,7 @@ export class RelayClient {
     const did = this.#keypair.did();
 
     const res = await fetch(
-      `https://${XRPC_DISPATCHER_HOST}/xrpc/${GET_NONCE_NSID}`,
+      `https://${getXrpcDispatcherHost()}/xrpc/${GET_NONCE_NSID}`,
       {
         method: "POST",
         headers: {
@@ -705,8 +719,8 @@ export function buildClientID() {
       `${SUBMIT_ACCEPT_NSID}?aud=*`,
       `${SUBMIT_BID_NSID}?aud=*`,
       `${SUBMIT_EVENT_NSID}?aud=*`,
-      `com.fedproxy.temp.xrpc.getRegistrationNonce?aud=did:web:${XRPC_DISPATCHER_HOST}`,
-      `com.fedproxy.temp.xrpc.subscribe?aud=did:web:${XRPC_DISPATCHER_HOST}`,
+      `com.fedproxy.temp.xrpc.getRegistrationNonce?aud=did:web:${getXrpcDispatcherHost()}`,
+      `com.fedproxy.temp.xrpc.subscribe?aud=did:web:${getXrpcDispatcherHost()}`,
     ].map(n => `rpc:${n}`).join(' ');
     return `http://localhost?${new URLSearchParams({
       scope: `atproto ${repoScope} ${rpcScope}`,
