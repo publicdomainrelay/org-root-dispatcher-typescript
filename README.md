@@ -1,19 +1,44 @@
 # Compute Contracts - Alpha
 
-Both operators scan the QR codes from their own processes using the
-did-key-associator webapp at `https://qr.fedfork.com`.
-
 ```bash
+curl -fsSL https://deno.land/install.sh | sh
+
 git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
-cd org-root-dispatcher-typescript
+cd org-root-dispatcher-typescript/atproto-market
 ```
+
+## Quickstart - Ephemeral Accounts with association records
 
 **Terminal 1 — Bidder:**
 
 > Bids on compute contracts
 
 ```bash
-cd atproto-market
+deno run -A hono-bidder/mod.ts \
+  --compute-provider-local \
+  --policy-mode only-me
+```
+
+**Terminal 2 — Requester:**
+
+> Wants compute
+
+```bash
+deno run -A request-vm-ssh/mod.ts \
+  --policy-mode only-me
+```
+
+
+## Quickstart - BlueSky Accounts via QR Code Session Transfer
+
+Both operators scan the QR codes from their own processes using the
+did-key-associator webapp at `https://qr.fedfork.com`.
+
+**Terminal 1 — Bidder:**
+
+> Bids on compute contracts
+
+```bash
 deno run -A hono-bidder/mod.ts \
   --compute-provider-local \
   --policy-mode tangled-vouch \
@@ -27,7 +52,6 @@ deno run -A hono-bidder/mod.ts \
 > Wants compute
 
 ```bash
-cd atproto-market
 deno run -A request-vm-ssh/mod.ts \
   --atproto-oauth-qr \
   --atproto-handle alice.bsky.social \
