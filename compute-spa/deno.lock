@@ -517,6 +517,37 @@
           "npm:multiformats@^13.3.0"
         ]
       },
+      "jsr:@publicdomainrelay/atproto-event-stream-abc@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/atproto-event-stream-common@0",
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/atproto-event-stream-common@0.0.0": {},
+      "jsr:@publicdomainrelay/atproto-event-stream-jetstream@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/atproto-event-stream-abc@0",
+          "jsr:@publicdomainrelay/atproto-event-stream-common@0",
+          "jsr:@publicdomainrelay/firehose-watcher-jetstream@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/atproto-event-stream-relay@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/atproto-event-stream-abc@0",
+          "jsr:@publicdomainrelay/atproto-event-stream-common@0",
+          "jsr:@publicdomainrelay/firehose-watcher-abc@0",
+          "jsr:@publicdomainrelay/firehose-watcher-subscriberepos@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/atproto-event-streams-client@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/atproto-event-stream-abc@0",
+          "jsr:@publicdomainrelay/atproto-event-stream-common@0",
+          "jsr:@publicdomainrelay/atproto-event-stream-jetstream@0",
+          "jsr:@publicdomainrelay/atproto-event-stream-relay@0",
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      },
       "jsr:@publicdomainrelay/atproto-helpers@0.0.0": {
         "dependencies": [
           "npm:@atproto/api@~0.20.8",
@@ -527,9 +558,16 @@
       "jsr:@publicdomainrelay/atproto-oauth-abc@0.0.0": {},
       "jsr:@publicdomainrelay/atproto-oauth-common@0.0.0": {},
       "jsr:@publicdomainrelay/atproto-oauth-fetch@0.0.0": {},
+      "jsr:@publicdomainrelay/atproto-oauth-helpers@0.0.0": {
+        "dependencies": [
+          "npm:@atproto/jwk@~0.7.2",
+          "npm:@atproto/oauth-client@~0.7.5"
+        ]
+      },
       "jsr:@publicdomainrelay/atproto-relay-abc@0.0.0": {
         "dependencies": [
-          "jsr:@publicdomainrelay/atproto-relay-common@0"
+          "jsr:@publicdomainrelay/atproto-relay-common@0",
+          "jsr:@publicdomainrelay/firehose-common@0"
         ]
       },
       "jsr:@publicdomainrelay/atproto-relay-common@0.0.0": {},
@@ -537,6 +575,7 @@
         "dependencies": [
           "jsr:@publicdomainrelay/atproto-relay-abc@0",
           "jsr:@publicdomainrelay/atproto-relay-common@0",
+          "jsr:@publicdomainrelay/backlog-sequencer@0",
           "jsr:@publicdomainrelay/event-bus@0.1",
           "jsr:@publicdomainrelay/logger@0"
         ]
@@ -544,6 +583,11 @@
       "jsr:@publicdomainrelay/atproto-repo-abc@0.0.0": {},
       "jsr:@publicdomainrelay/atproto-repo-common@0.0.0": {},
       "jsr:@publicdomainrelay/atproto-repo-deno@0.0.0": {},
+      "jsr:@publicdomainrelay/backlog-sequencer@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/event-bus@0.1"
+        ]
+      },
       "jsr:@publicdomainrelay/badge-blue-keys-abc@0.0.0": {},
       "jsr:@publicdomainrelay/badge-blue-keys-atproto@0.0.0": {},
       "jsr:@publicdomainrelay/badge-blue-keys-common@0.0.0": {},
@@ -619,7 +663,9 @@
         "dependencies": [
           "jsr:@publicdomainrelay/atproto-helpers@0",
           "jsr:@publicdomainrelay/compute-provider-abc@0",
+          "jsr:@publicdomainrelay/hono-factory-package-registry@0",
           "jsr:@publicdomainrelay/oidc-issuer-hono@0",
+          "jsr:@publicdomainrelay/package-store-local-fs@0",
           "jsr:@publicdomainrelay/serve@0",
           "npm:yaml@^2.7.0"
         ]
@@ -698,6 +744,7 @@
       },
       "jsr:@publicdomainrelay/event-bus@0.1.0": {},
       "jsr:@publicdomainrelay/fedproxy-rbac-common@0.0.0": {},
+      "jsr:@publicdomainrelay/firehose-common@0.0.0": {},
       "jsr:@publicdomainrelay/firehose-watcher-abc@0.0.0": {
         "dependencies": [
           "jsr:@publicdomainrelay/logger@0"
@@ -710,6 +757,7 @@
       },
       "jsr:@publicdomainrelay/firehose-watcher-subscriberepos@0.0.0": {
         "dependencies": [
+          "jsr:@publicdomainrelay/firehose-common@0",
           "jsr:@publicdomainrelay/firehose-watcher-abc@0"
         ]
       },
@@ -730,6 +778,7 @@
           "jsr:@publicdomainrelay/atproto-relay-abc@0",
           "jsr:@publicdomainrelay/atproto-relay-common@0",
           "jsr:@publicdomainrelay/atproto-relay-xrpc@0",
+          "jsr:@publicdomainrelay/firehose-common@0",
           "jsr:@publicdomainrelay/hono-error-middleware@0.1",
           "jsr:@publicdomainrelay/hostname-helpers@0.1",
           "jsr:@publicdomainrelay/logger@0"
@@ -1065,7 +1114,12 @@
           "jsr:@publicdomainrelay/trust-graph-abc@0"
         ]
       },
-      "jsr:@publicdomainrelay/utils-attestation-key@0.0.0": {}
+      "jsr:@publicdomainrelay/utils-attestation-key@0.0.0": {},
+      "jsr:@publicdomainrelay/ws-reconnect@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/logger@0"
+        ]
+      }
     }
   }
 }
