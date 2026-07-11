@@ -1,12 +1,126 @@
-# Public Domain Relay
+# Compute Contracts - Alpha
 
-**Build Alice** — an AI software maintainer that provisions compute through a
-trust-verified marketplace on AT Protocol. Make compute a public utility: anyone
-can request it, anyone can provide it, governed by verifiable trust (SCITT
-receipts, vouches, attestation chains) not cloud provider lock-in. Alice
-automates the trust decisions so humans don't have to.
+Both operators scan the QR codes from their own processes using the
+did-key-associator webapp at `https://qr.fedfork.com`.
 
-## Actors
+**Terminal 1 — Bidder:**
+
+> Bids on compute contracts
+
+```bash
+cd atproto-market
+deno run -A hono-bidder/mod.ts \
+  --atproto-oauth-qr \
+  --atproto-handle bob.bsky.social \
+  --compute-provider-local \
+  --policy-mode tangled-vouch \
+  --serve-port 0 \
+  --no-ingress-proxy \
+  --firehose-mode subscriberepos
+```
+
+**Terminal 2 — Requester:**
+
+> Wants compute
+
+```bash
+cd atproto-market
+deno run -A request-vm-ssh/mod.ts \
+  --atproto-oauth-qr \
+  --atproto-handle alice.bsky.social \
+  --policy-mode tangled-vouch \
+  --no-ingress-proxy \
+  --firehose-mode subscriberepos
+```
+
+## Step-by-step records (YAML — on wire these are JSON in ATProto repos)
+
+**1. Alice publishes the VM spec (payload of the RFP)**
+
+```yaml
+$type: com.publicdomainrelay.temp.compute.vm
+cpus: 2
+mem: 4G
+disk: 40G
+network: 500G
+role: my-cool-role
+user_data: |
+  #cloud-config
+  runcmd:
+    - [sh, -c, "echo hello > /var/log/hi"]
+location:
+  country: USA
+  region: west
+```
+
+**2. Alice publishes the RFP envelope**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.rfp
+payload:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.compute.vm/3mm3dolfolz2c
+  cid: bafyrei...vm
+```
+
+**3. Bob publishes the x402 pricing payload**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.bids.x402
+cost: 0.10
+currency: USDC
+frequency: hourly
+prepay: true
+url: https://compute-contract.bob.example/receipt
+```
+
+**4. Bob publishes the bid envelope**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.bid
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+payload:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bids.x402/3mm4...
+  cid: bafyrei...x402
+```
+
+**5. Alice publishes the Accept**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.accept
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+bid:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
+  cid: bafyrei...bid
+```
+
+**6. Bob publishes the Receipt**
+
+```yaml
+$type: com.publicdomainrelay.temp.market.receipt
+rfp:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
+  cid: bafyrei...rfp
+bid:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
+  cid: bafyrei...bid
+accept:
+  $type: com.atproto.repo.strongRef
+  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.accept/3mlagijgoeb23
+  cid: bafyrei...accept
+```
+
+### Actors
 
 | Actor | Role |
 |-------|------|
@@ -16,7 +130,7 @@ automates the trust decisions so humans don't have to.
 | PDS | Each actor's AT Protocol Personal Data Server holding their signed records. |
 | Firehose | `com.atproto.sync.subscribeRepos` / Jetstream — public commit stream carrying everything. |
 
-## RFP Compute Marketplace (the spine)
+### RFP Compute Marketplace (the spine)
 
 All cross-record references use `com.atproto.repo.strongRef` (`{$type, uri, cid}`),
 so the chain is content-addressed end-to-end. Every record is signed (badge.blue
@@ -115,129 +229,12 @@ sequenceDiagram
     BP-->>A: receipt strongRef
 ```
 
-### Step-by-step records (YAML — on wire these are JSON in ATProto repos)
-
-**1. Alice publishes the VM spec (payload of the RFP)**
-
-```yaml
-$type: com.publicdomainrelay.temp.compute.vm
-cpus: 2
-mem: 4G
-disk: 40G
-network: 500G
-role: my-cool-role
-user_data: |
-  #cloud-config
-  runcmd:
-    - [sh, -c, "echo hello > /var/log/hi"]
-location:
-  country: USA
-  region: west
-```
-
-**2. Alice publishes the RFP envelope**
-
-```yaml
-$type: com.publicdomainrelay.temp.market.rfp
-payload:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:alice/com.publicdomainrelay.temp.compute.vm/3mm3dolfolz2c
-  cid: bafyrei...vm
-```
-
-**3. Bob publishes the x402 pricing payload**
-
-```yaml
-$type: com.publicdomainrelay.temp.market.bids.x402
-cost: 0.10
-currency: USDC
-frequency: hourly
-prepay: true
-url: https://compute-contract.bob.example/receipt
-```
-
-**4. Bob publishes the bid envelope**
-
-```yaml
-$type: com.publicdomainrelay.temp.market.bid
-rfp:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
-  cid: bafyrei...rfp
-payload:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bids.x402/3mm4...
-  cid: bafyrei...x402
-```
-
-**5. Alice publishes the Accept**
-
-```yaml
-$type: com.publicdomainrelay.temp.market.accept
-rfp:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
-  cid: bafyrei...rfp
-bid:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
-  cid: bafyrei...bid
-```
-
-**6. Bob publishes the Receipt**
-
-```yaml
-$type: com.publicdomainrelay.temp.market.receipt
-rfp:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.rfp/3mm3doliee72s
-  cid: bafyrei...rfp
-bid:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:bob/com.publicdomainrelay.temp.market.bid/3mm4...
-  cid: bafyrei...bid
-accept:
-  $type: com.atproto.repo.strongRef
-  uri: at://did:plc:alice/com.publicdomainrelay.temp.market.accept/3mlagijgoeb23
-  cid: bafyrei...accept
-```
-
 ### Authority and validation rules
 
 - `Accept.rfp.uri` MUST equal `Bid.rfp.uri` (and CIDs must match) — provider relay refuses to settle otherwise.
 - `Accept` MUST be authored by the same DID that authored the referenced RFP.
 - `Receipt` MUST be authored by the same DID that authored the referenced Bid.
 - All records carry badge.blue inline attestations. Receipts additionally carry a remote proof CID binding accept → receipt.
-
-### Discovery
-
-Forward via strongRefs in each record. Backward via backlink indexers (e.g. Constellation) that enumerate all bids pointing at a given RFP without scanning the firehose. In production, bidders advertise via `market.offering` records; requesters discover via relay `listReposByCollection` + firehose watchers.
-
-### Implementation status
-
-| Subsystem | Status |
-|-----------|--------|
-| Communication (PDS, firehose, DIDs, records) | 100% |
-| Compute Contract lifecycle (RFP→bid→accept→provision) | 100% |
-| Fulfillment policies (only_me, direct_network) | 80% |
-| SCITT transparency service | 100% (external repo) |
-| Record attestation (badge.blue) | 100% |
-| OIDC workload identity | 100% |
-| Supply chain scanning (shouldi) | 100% (external repo: dffml) |
-| Trust crypto (signatures exist, web-of-trust doesn't) | 60% |
-| Stream of consciousness (prioritizer, knowledge graph) | 20% |
-| KERI duplicity, living threat model, conformity | 10% |
-
-Architecture as code: `open-architecture/lib/abc/alice/mod.ts` — `whatAliceIs()`
-→ `puttingItTogether()`. The call graph IS the blueprint. Walk it:
-
-```
-codegraph explore "whatAliceIs theInfiniteLoop puttingItTogether"
-```
-
-See `open-architecture/COMPUTE_CONTRACT_FLOW_MAP.md` (1454 lines) for full architecture deep-dive.
-See `open-architecture/STATUS_REPORT.md` for stub→implementation map.
-See `compute-contract/README.md` for the RFP lifecycle spec with Mermaid diagrams.
 
 ### Settlement flow
 
