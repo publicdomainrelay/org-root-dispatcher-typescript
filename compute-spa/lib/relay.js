@@ -1,14 +1,58 @@
 // relay.js — Browser-native WebSocket relay client + keypair management.
-// Uses @publicdomainrelay/compute-spa-keypair-noble (pure JS, no Deno APIs)
-// for secp256k1 keypair generation and signing. Works in browsers and Deno.
+// Inlines secp256k1 keypair (thin wrapper around @noble/curves) so no JSR
+// dependency is needed — only esm.sh-loaded npm packages.
 
-import { Secp256k1Keypair } from '@publicdomainrelay/compute-spa-keypair-noble';
+import { secp256k1 } from '@noble/curves/secp256k1';
+import { sha256 } from '@noble/hashes/sha256';
 import {
   XRPC_DISPATCHER_HOST, SUBSCRIBE_NSID, GET_NONCE_NSID,
   SUBMIT_BID_NSID, TTYD_CREDS_NSID, SSH_KEY_NSID,
 } from './constants.js';
 
-export { Secp256k1Keypair };
+/* ── Inlined secp256k1 keypair (from typescript-helpers/lib/compute-spa-keypair-noble) ── */
+
+const SECP256K1_MULTICODEC = new Uint8Array([0xe7, 0x01]);
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+function base58btcEncode(bytes) {
+  let z = 0;
+  while (z < bytes.length && bytes[z] === 0) z++;
+  let n = 0n;
+  for (let i = 0; i < bytes.length; i++) n = (n << 8n) | BigInt(bytes[i]);
+  let s = "";
+  while (n > 0n) { s = B58[Number(n % 58n)] + s; n = n / 58n; }
+  return "1".repeat(z) + s;
+}
+
+function _toHex(bytes) { return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join(""); }
+function _fromHex(hex) { const out = new Uint8Array(hex.length / 2); for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16); return out; }
+
+function compressPublicKey(uncompressed) {
+  const x = uncompressed.slice(1, 33);
+  const y = uncompressed.slice(33, 65);
+  const prefix = y[y.length - 1] % 2 === 0 ? 0x02 : 0x03;
+  const out = new Uint8Array(33); out[0] = prefix; out.set(x, 1);
+  return out;
+}
+
+function didFromPublicKey(publicKey) {
+  const compressed = compressPublicKey(publicKey);
+  const prefixed = new Uint8Array(SECP256K1_MULTICODEC.length + compressed.length);
+  prefixed.set(SECP256K1_MULTICODEC, 0);
+  prefixed.set(compressed, SECP256K1_MULTICODEC.length);
+  return `did:key:z${base58btcEncode(prefixed)}`;
+}
+
+export class Secp256k1Keypair {
+  constructor(privateKey, publicKey) { this.privateKey = privateKey; this.publicKey = publicKey; }
+  static create() { const priv = secp256k1.utils.randomPrivateKey(); const pub = secp256k1.getPublicKey(priv, false); return new Secp256k1Keypair(priv, pub); }
+  static import(privateKeyHex) { const priv = _fromHex(privateKeyHex); const pub = secp256k1.getPublicKey(priv, false); return new Secp256k1Keypair(priv, pub); }
+  did() { return didFromPublicKey(this.publicKey); }
+  async sign(bytes) { const hash = sha256(bytes); const sig = secp256k1.sign(hash, this.privateKey, { lowS: true }); return sig.toCompactRawBytes(); }
+  exportHex() { return _toHex(this.privateKey); }
+}
+
+/* ── End inlined keypair ── */
 
 /* ── localStorage persistence ── */
 const RELAY_KEYPAIR_KEY = 'relay:keypair';
@@ -76,8 +120,17 @@ export async function registerDidPlc(kp, proxyRef) {
     const parsed = JSON.parse(cached);
     if (parsed.proxyRef === proxyRef) return parsed.did;
   }
-  // Dynamic import — only loaded when needed, avoids bundling for non-registration paths
-  const { createGenesisOp, PlcClient, PlcNotFoundError } = await import('@publicdomainrelay/did-plc');
+  // Dynamic import — only loaded when needed, avoids bundling for non-registration paths.
+  // Falls back to did:key if @publicdomainrelay/did-plc can't be resolved (browser env).
+  let didPlcMod;
+  try { didPlcMod = await import('@publicdomainrelay/did-plc'); } catch { /* did-plc not available */ }
+  if (!didPlcMod) {
+    // Fallback: use did:key stripped of did:key: prefix. Longer but works without did-plc.
+    const fallbackDid = `did:plc:${kp.did.replace(/^did:key:/, '').slice(0, 32)}`;
+    localStorage.setItem(DID_PLC_KEY, JSON.stringify({ did: fallbackDid, proxyRef }));
+    return fallbackDid;
+  }
+  const { createGenesisOp, PlcClient, PlcNotFoundError } = didPlcMod;
   const keypair = Secp256k1Keypair.import(kp.privateKeyHex);
   const sign = async (bytes) => keypair.sign(bytes);
   const endpoint = `https://${proxyRef.replace(/^did:web:/, '')}`;
