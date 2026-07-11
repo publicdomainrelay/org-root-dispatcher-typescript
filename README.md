@@ -5,6 +5,7 @@ did-key-associator webapp at `https://qr.fedfork.com`.
 
 ```bash
 git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
+cd org-root-dispatcher-typescript
 ```
 
 **Terminal 1 — Bidder:**
@@ -14,8 +15,6 @@ git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-t
 ```bash
 cd atproto-market
 deno run -A hono-bidder/mod.ts \
-  --atproto-oauth-qr \
-  --atproto-handle bob.bsky.social \
   --compute-provider-local \
   --policy-mode tangled-vouch \
   --serve-port 0 \
