@@ -40,3 +40,6 @@
 [submodule "atproto-relay"]
 	path = atproto-relay
 	url = https://github.com/publicdomainrelay/atproto-relay
+[submodule "social-web-computer"]
+	path = social-web-computer
+	url = https://github.com/publicdomainrelay/social-web-computer.git
