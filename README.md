@@ -956,3 +956,36 @@ Every capability split 4 ways (ABC layering):
 Deps flow one way: common → abc → impl → factory → CLI. No cycles.
 
 See `CLAUDE.md` for the full layering rules and patterns.
+
+## Guest Transport: Tunnel Subscriber (did-key-ingress-proxy)
+
+Guest VMs connect to the dispatcher (`xrpc.fedproxy.com`) via the tunnel
+subscriber — a Deno binary that replaces the legacy fedproxy-client/Go relay
+stack. The tunnel subscriber registers with the dispatcher using a secp256k1
+keypair, gets assigned a DNS subdomain, and bridges dispatcher WebSocket tunnel
+bytes directly to the guest's sshd on `127.0.0.1:22`.
+
+```
+Guest VM                              Dispatcher                  Requester
+────────                              ──────────                  ─────────
+tunnel-subscriber (deno run jsr:...)  ←── WS nonce+register ──
+  → derives did:key from keypair
+  → registers subdomain
+  → bridges WS ↔ Deno.connect(127.0.0.1:22)
+                                                            SSH websocat wss://<subdomain>.xrpc.fedproxy.com/...tunnel
+                                                            → dispatcher routes to guest
+```
+
+**onNetwork**: Guest reports its dispatcher FQDN at boot via
+`POST /v1/on-network` to the provider serve. The provider creates an onNetwork
+record on the bidder PDS, wrapped in a `market.event`. The requester discovers
+the FQDN through the Bluesky firehose and SSHes through the dispatcher tunnel.
+
+**JSR Registry**: Each provider serve mounts an ephemeral hono-jsr package
+registry, serving workspace packages to guest containers over the relay
+subdomain. The guest's tunnel subscriber pulls its dependencies from this
+registry at boot (`JSR_URL=<provider-subdomain>`).
+
+**did:plc**: The dispatcher accepts both `did:key` and `did:plc` for subscriber
+registration. `did:plc` produces shorter DNS labels (~34 chars vs ~57 for
+did:key), fitting within the 63-char DNS label limit.
