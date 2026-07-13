@@ -28,7 +28,6 @@ deno run -A request-vm-ssh/mod.ts \
   --policy-mode only-me
 ```
 
-
 ## Quickstart - BlueSky Accounts via QR Code Session Transfer
 
 Both operators scan the QR codes from their own processes using the
@@ -59,6 +58,8 @@ deno run -A request-vm-ssh/mod.ts \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
 ```
+
+[![bsky-jetstream](https://asciinema.org/a/1260738.svg)](https://asciinema.org/a/1260738)
 
 ## Step-by-step records (YAML — on wire these are JSON in ATProto repos)
 
