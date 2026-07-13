@@ -9,10 +9,13 @@ on:
 permissions: {}
 
 jobs:
-  test:
+  discover:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      test_matrix: ${{ steps.discover.outputs.test_matrix }}
+      typecheck_matrix: ${{ steps.discover.outputs.typecheck_matrix }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -23,23 +26,58 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Smoke tests
+      - name: Discover workspaces
+        id: discover
         run: |
-          deno test --allow-all --no-check --config atproto-market/deno.json atproto-market/request-vm-ssh/cli_smoke_test.ts
-          deno test --allow-all --no-check --config hono-pds/deno.json hono-pds/test/cli_smoke_test.ts
-          deno test --allow-all --no-check --config hono-compute-provider/deno.json hono-compute-provider/test/cli_smoke_test.ts
-          deno test --allow-all --no-check --config typescript-helpers/deno.json typescript-helpers/test/cli_smoke_test.ts
-          deno test --allow-all --no-check --config deno-worker-sandbox/deno.json deno-worker-sandbox/test/cli_smoke_test.ts
-          deno test --allow-all --no-check --config did-key-ingress-proxy/deno.json did-key-ingress-proxy/test/tunnel_test.ts
-          deno test --allow-all --no-check --config atproto-relay/deno.json atproto-relay/test/
-          deno test --allow-all --no-check --config hono-jsr/deno.json hono-jsr/hono-package-registry/cli_smoke_test.ts
+          deno run -A scripts/ci-discover.ts > /tmp/matrix.json
+          {
+            echo "test_matrix=$(jq -c '.test' /tmp/matrix.json)"
+            echo "typecheck_matrix=$(jq -c '.typecheck' /tmp/matrix.json)"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Type check
-        run: |
-          deno check --config atproto-market/deno.json atproto-market/request-vm-ssh/mod.ts
-          deno check --config atproto-market/deno.json atproto-market/hono-bidder/mod.ts
-          deno check --config atproto-market/deno.json atproto-market/hono-compute-contract-gateway/mod.ts
-          deno check --config atproto-market/deno.json atproto-market/hono-policy/mod.ts
-          deno check --config atproto-market/deno.json atproto-market/hono-plc/mod.ts
-          deno check --config hono-pds/deno.json hono-pds/main.ts
-          deno check --config atproto-relay/deno.json atproto-relay/hono-atproto-relay/mod.ts
+  test:
+    needs: discover
+    if: ${{ needs.discover.outputs.test_matrix != '[]' && needs.discover.outputs.test_matrix != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJson(needs.discover.outputs.test_matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run tests (${{ matrix.workspace.label }})
+        working-directory: ${{ matrix.workspace.dir }}
+        run: deno test ${{ matrix.workspace.flags }}
+
+  typecheck:
+    needs: discover
+    if: ${{ needs.discover.outputs.typecheck_matrix != '[]' && needs.discover.outputs.typecheck_matrix != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        entry: ${{ fromJson(needs.discover.outputs.typecheck_matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type check (${{ matrix.entry.entrypoint }})
+        run: deno check --config ${{ matrix.entry.config }} ${{ matrix.entry.entrypoint }}
