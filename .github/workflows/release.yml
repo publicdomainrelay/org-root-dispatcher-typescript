@@ -63,6 +63,11 @@ jobs:
             - `compute-spa.tar.gz` — Compute SPA browser bundle
             - `did-key-associator.tar.gz` — DID Key Associator browser bundle
 
+            ### Desktop
+            - `hono-desktop` — Desktop CLI (macOS)
+            - `hono-desktop-linux` — Desktop CLI (Linux)
+            - `macos-desktop.zip` — macOS .app bundle (may not always be present)
+
             Built from commit: ${{ github.event.workflow_run.head_sha }}
           files: release-flat/*
           fail_on_unmatched_files: false
@@ -100,6 +105,11 @@ jobs:
             ### SPAs
             - `compute-spa.tar.gz` — Compute SPA browser bundle
             - `did-key-associator.tar.gz` — DID Key Associator browser bundle
+
+            ### Desktop
+            - `hono-desktop` — Desktop CLI (macOS)
+            - `hono-desktop-linux` — Desktop CLI (Linux)
+            - `macos-desktop.zip` — macOS .app bundle (may not always be present)
 
             Built from commit: ${{ github.sha }}
           files: release-flat/*

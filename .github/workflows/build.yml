@@ -74,6 +74,27 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-sandbox-${{ matrix.suffix }} deno-worker-sandbox/hono-sandbox/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-http-static-${{ matrix.suffix }} typescript-helpers/hono-http-static/mod.ts
 
+      - name: Build macOS desktop app
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: |
+          cd deno-macos-runner-desktop
+          deno desktop --no-check --allow-all hono-macos-runner-desktop/mod.ts
+          APP_NAME=$(ls -d *.app 2>/dev/null | head -1 || echo "")
+          if [ -n "$APP_NAME" ] && [ -d "$APP_NAME" ]; then
+            zip -r ../dist/macos-desktop.zip "$APP_NAME"
+          else
+            echo "No .app bundle produced, skipping"
+          fi
+        continue-on-error: true
+
+      - name: Build desktop CLI
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: |
+          cd deno-macos-runner-desktop
+          deno compile --allow-all --output ../dist/hono-desktop hono-desktop/mod.ts
+          deno compile --allow-all --target x86_64-unknown-linux-gnu --output ../dist/hono-desktop-linux hono-desktop/mod.ts
+        continue-on-error: true
+
       - name: Compile binaries (windows)
         if: matrix.target == 'x86_64-pc-windows-msvc'
         run: |
