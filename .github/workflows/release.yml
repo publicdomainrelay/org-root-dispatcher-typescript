@@ -3,7 +3,6 @@ name: Release
 on:
   workflow_run:
     workflows: ["Build"]
-    branches: [main]
     types:
       - completed
 
@@ -34,6 +33,39 @@ jobs:
           find ./release-artifacts -type f -exec cp {} release-flat/ \;
           echo "Release files:"
           ls -la release-flat/
+
+      - name: Detect version tag
+        id: tag
+        run: |
+          REF="${{ github.event.workflow_run.head_branch }}"
+          if echo "$REF" | grep -qE '^v[0-9]'; then
+            echo "name=${REF}" >> "$GITHUB_OUTPUT"
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tagged release
+        if: steps.tag.outputs.is_tag == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: ${{ steps.tag.outputs.name }}
+          body: |
+            Release ${{ steps.tag.outputs.name }}
+
+            ### Platform archives
+            - `binaries-linux-x64.tar.gz` — Linux x86_64 (14 binaries)
+            - `binaries-windows-x64.zip` — Windows x86_64 (14 binaries, .exe)
+            - `binaries-macos-arm64.tar.gz` — macOS Apple Silicon (14 binaries)
+
+            ### SPAs
+            - `compute-spa.tar.gz` — Compute SPA browser bundle
+            - `did-key-associator.tar.gz` — DID Key Associator browser bundle
+
+            Built from commit: ${{ github.event.workflow_run.head_sha }}
+          files: release-flat/*
+          fail_on_unmatched_files: false
 
       - name: Move latest tag
         env:
