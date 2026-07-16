@@ -6,7 +6,9 @@
 > Multiple passes of refactors were done and while things work they are just to
 > play with right now! The compute contract flow can be considered proven.
 > However, there is a lot of security pieces involved here and they need to be
-> gone through with a fine toothed comb before Alpha.
+> gone through with a fine toothed comb before Alpha. Please consider re-writing
+> everything using your favorite LLM etc. let's please have many
+> implementations! :D
 
 This is a spec for ATProto accounts to request and advertise (compute)
 resources.
