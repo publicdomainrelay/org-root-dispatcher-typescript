@@ -76,6 +76,41 @@ deno run -A request-vm-ssh/mod.ts \
 
 ## Protocol
 
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Alice
+    actor Bob
+
+    rect rgb(240, 248, 255)
+        Note over Alice,Bob: Request For Proposal (RFP)
+        Alice->>Bob: createRecord: compute.vm<br/>(CPUs, Memory, Disk, etc.)
+        Alice->>Bob: createRecord: rfp<br/>(strongRef to compute.vm)
+    end
+
+    rect rgb(245, 245, 245)
+        Note over Alice,Bob: Bid
+        Bob->>Alice: createRecord: bids.free (or x402)<br/>(determine price)
+        Bob->>Alice: createRecord: bid<br/>(strongRef to RFP + payment type)
+    end
+
+    rect rgb(240, 248, 255)
+        Note over Alice,Bob: Accept
+        Note over Alice: Payment Settlement Flow (NOP if bids.free)
+        Alice->>Bob: createRecord: accept<br/>(strongRef to RFP + Bid + receipt-of-payment)
+    end
+
+    rect rgb(245, 245, 255)
+        Note over Alice,Bob: Receipt
+        Note over Bob: Provision Compute
+        Bob->>Alice: createRecord: receipt<br/>(strongRef to RFP + Bid + Accept)
+        Bob->>Alice: createRecord: compute.events.vm.onNetwork<br/>(address: public IP or proxied FQDN)
+        Bob->>Alice: createRecord: market.event<br/>(strongRef to onNetwork + receipt)
+    end
+
+    Note over Alice: Connect to compute at/via address
+```
+
 - Alice, Bob, and Eve are on the network
 - Alice wants to issue a Compute Contract Request For Proposal (CCRFP)
   - Alice's CCRFP will state she wants an OpenCode instance
