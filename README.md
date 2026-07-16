@@ -1,5 +1,14 @@
 # Compute Contracts - Pre-Alpha
 
+This is a spec for ATProto accounts to request and advertise (compute)
+resources.
+
+This spec is for you if you run an organization and want to leverage
+decentralized identity to allow access to your org's compute (and in the future
+more) resources to your members and their workloads/agents.
+
+The flow is: Request For Proposal -> Bid -> Accept -> Receipt
+
 > [!CAUTION]
 >
 > This is pre-alpha software and it has yet to have a thorough review!!!
@@ -9,15 +18,6 @@
 > gone through with a fine toothed comb before Alpha. Please consider re-writing
 > everything using your favorite LLM etc. let's please have many
 > implementations! :D
-
-This is a spec for ATProto accounts to request and advertise (compute)
-resources.
-
-This spec is for you if you run an organization and want to leverage
-decentralized identity to allow access to your org's compute (and in the future
-more) resources to your members and their workloads/agents.
-
-The flow is: Request For Proposal -> Bid -> Accept -> Receipt
 
 ## Quickstart
 
