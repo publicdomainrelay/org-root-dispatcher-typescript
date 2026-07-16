@@ -1,11 +1,13 @@
-# Compute Contracts - Alpha
+# Compute Contracts - Pre-Alpha
 
-```bash
-curl -fsSL https://deno.land/install.sh | sh
+This is a spec for ATProto accounts to request and advertise (compute)
+resources.
 
-git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
-cd org-root-dispatcher-typescript/atproto-market
-```
+This spec is for you if you run an organization and want to leverage
+decentralized identity to allow access to your org's compute (and in the future
+more) resources to your members and their workloads/agents.
+
+The flow is: Request For Proposal -> Bid -> Accept -> Receipt
 
 ## Quickstart
 
@@ -18,6 +20,13 @@ cd org-root-dispatcher-typescript/atproto-market
 > It's a hosted service that runs a bidder in the centralized cloud for you in
 > case you don't want to run your own decentralized on on your own compute hosts
 > to get started.
+
+```bash
+curl -fsSL https://deno.land/install.sh | sh
+
+git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
+cd org-root-dispatcher-typescript/atproto-market
+```
 
 [![bsky-jetstream](https://asciinema.org/a/1260738.svg)](https://asciinema.org/a/1260738)
 

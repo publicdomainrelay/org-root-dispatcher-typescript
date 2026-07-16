@@ -43,3 +43,6 @@
 [submodule "social-web-computer"]
 	path = social-web-computer
 	url = https://github.com/publicdomainrelay/social-web-computer.git
+[submodule "digitalocean-bidder"]
+	path = digitalocean-bidder
+	url = https://github.com/publicdomainrelay/digitalocean-bidder.git
