@@ -1,6 +1,7 @@
 # Compute Contracts - Pre-Alpha
 
 - <https://github.com/publicdomainrelay/org-root-dispatcher-typescript>
+- [Fancy version of this content](./fancy/)
 
 This is a spec for ATProto accounts to request and advertise (compute)
 resources.
@@ -29,7 +30,7 @@ The flow is: Request For Proposal -> Bid -> Accept -> Receipt
 >
 > If you want to quickly enable folks in your organization to be able to request
 > compute using their ATProto accounts, or Workloads/Agents/DIDs associated with
-> their ATProto account you can use https://digitalocean.socialweb.computer
+> their ATProto account you can use <https://digitalocean.socialweb.computer>
 >
 > It's a hosted service that runs a bidder in the centralized cloud for you in
 > case you don't want to run your own decentralized on on your own compute hosts
@@ -62,7 +63,7 @@ deno run -A request-vm-ssh/mod.ts \
 ## BlueSky Accounts via QR Code Session Transfer
 
 Both operators scan the QR codes from their own processes using the
-did-key-associator webapp at `https://qr.fedfork.com`.
+did-key-associator webapp at <https://qr.fedfork.com>.
 
 #### Bids on compute contracts
 
