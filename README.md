@@ -1,5 +1,7 @@
 # Compute Contracts - Pre-Alpha
 
+- <https://github.com/publicdomainrelay/org-root-dispatcher-typescript>
+
 This is a spec for ATProto accounts to request and advertise (compute)
 resources.
 
@@ -19,6 +21,8 @@ The flow is: Request For Proposal -> Bid -> Accept -> Receipt
 > everything using your favorite LLM etc. let's please have many
 > implementations! :D
 
+[![bsky-jetstream](https://asciinema.org/a/1260738.svg)](https://asciinema.org/a/1260738)
+
 ## Quickstart
 
 > [!TIP]
@@ -37,8 +41,6 @@ curl -fsSL https://deno.land/install.sh | sh
 git clone --recursive https://github.com/publicdomainrelay/org-root-dispatcher-typescript
 cd org-root-dispatcher-typescript/atproto-market
 ```
-
-[![bsky-jetstream](https://asciinema.org/a/1260738.svg)](https://asciinema.org/a/1260738)
 
 ### Ephemeral Accounts with association records
 
