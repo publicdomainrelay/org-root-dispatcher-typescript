@@ -1,5 +1,13 @@
 # Compute Contracts - Pre-Alpha
 
+> [!CAUTION]
+>
+> This is pre-alpha software and it has yet to have a thorough review!!!
+> Multiple passes of refactors were done and while things work they are just to
+> play with right now! The compute contract flow can be considered proven.
+> However, there is a lot of security pieces involved here and they need to be
+> gone through with a fine toothed comb before Alpha.
+
 This is a spec for ATProto accounts to request and advertise (compute)
 resources.
 
