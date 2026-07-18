@@ -1,7 +1,8 @@
 # Compute Contracts - Pre-Alpha
 
+- [Blog](https://blog.socialweb.computer)
 - <https://github.com/publicdomainrelay/org-root-dispatcher-typescript>
-- [Fancy version of this content](./fancy/)
+- [*Fancy* version of this content](./fancy/)
 
 This is a spec for ATProto accounts to request and advertise (compute)
 resources.
