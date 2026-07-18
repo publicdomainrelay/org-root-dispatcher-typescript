@@ -67,6 +67,12 @@ users:
     lock_passwd: true
     no_user_group: false
 
+# Key-only root login; DO's random root password is expired by
+# default — ssh_pwauth: false prevents the PAM "password expired"
+# prompt from blocking non-interactive SSH.
+ssh_pwauth: false
+disable_root: false
+
 write_files:
   - path: /usr/local/bin/setup-wootty.sh
     owner: root:root
