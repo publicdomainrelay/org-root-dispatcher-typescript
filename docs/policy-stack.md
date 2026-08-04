@@ -17,10 +17,10 @@ interface, impls, factory, and CLI. Neither ABC imports the other.
 | impl | `market-policy-direct-network-bsky-mutual` | `lib/market-policy-direct-network-bsky-mutual/` |
 | impl | `market-policy-registry` | `lib/market-policy-registry/` |
 | impl | `market-policy-engine-worker` | `lib/market-policy-engine-worker/` |
-| impl | `market-policy-engine-service` | `lib/market-policy-engine-service/` |
-| impl | `market-policy` | `lib/market-policy/` |
-| factory | `hono-factory-policy-builtin` | `lib/hono-factory-policy-builtin/` |
-| CLI | `hono-policy` | `hono-policy/` |
+| impl | `policy-engine-executor-gha-lite` | `policy-engine/lib/policy-engine-executor-gha-lite/` |
+| impl | `policy-engine-executor-typescript` | `policy-engine/lib/policy-engine-executor-typescript/` |
+| factory | `hono-factory-policy-engine` | `policy-engine/lib/hono-factory-policy-engine/` |
+| CLI | `hono-policy-engine` | `policy-engine/hono-policy-engine/` |
 
 ## A policy is data, not a mode
 

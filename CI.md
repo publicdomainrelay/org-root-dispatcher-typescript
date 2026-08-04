@@ -28,7 +28,7 @@ Runs on every push to `main` and every pull request.
 - `hono-bidder/mod.ts`
 - `hono-pds/main.ts`
 - `hono-compute-contract-gateway/mod.ts`
-- `hono-policy/mod.ts`
+- `hono-policy-engine/mod.ts`
 
 ## Build Workflow
 

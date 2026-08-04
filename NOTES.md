@@ -402,14 +402,14 @@ deno run -A hono-compute-contract-gateway/mod.ts \
   --fedproxy-host fedproxy.com
 ```
 
-### Policy Engine (`hono-policy`)
+### Policy Engine (`hono-policy-engine`)
 
 ```bash
-cd atproto-market
-deno run -A hono-policy/mod.ts --port 2586 --policy allow-net
+cd policy-engine
+deno run -A hono-policy-engine/mod.ts --port 2586
 
 # Strict auth mode
-deno run -A hono-policy/mod.ts --port 2586 --policy "allow-net,deny-all" --strict-auth
+deno run -A hono-policy-engine/mod.ts --port 2586
 ```
 
 ### Compute Provider (standalone)
