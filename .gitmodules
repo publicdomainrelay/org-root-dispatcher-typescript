@@ -46,3 +46,6 @@
 [submodule "digitalocean-bidder"]
 	path = digitalocean-bidder
 	url = https://github.com/publicdomainrelay/digitalocean-bidder.git
+[submodule "policy-engine"]
+	path = policy-engine
+	url = https://github.com/publicdomainrelay/policy-engine

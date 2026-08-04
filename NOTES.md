@@ -170,14 +170,14 @@ cd deno-macos-runner-desktop && ./rebuild.sh
 # Headless (cross-platform) — local container mode
 cd atproto-market
 deno run -A hono-bidder/mod.ts \
-  --accept-scope only_me \
+  --policy only-me \
   --private-key-hex-path ~/Documents/bidder-private-key.hex \
   --pds-state-path ~/Documents/bidder-pds-state.db \
   --compute-provider-local
 
 # With explicit container mode
 deno run -A hono-bidder/mod.ts \
-  --accept-scope only_me \
+  --policy only-me \
   --private-key-hex-path ~/Documents/bidder-private-key.hex \
   --pds-state-path ~/Documents/bidder-pds-state.db \
   --compute-provider-local \
@@ -189,8 +189,8 @@ deno run -A hono-bidder/mod.ts \
 ```bash
 cd atproto-market
 deno run -A request-vm-ssh/mod.ts \
-  --policy-mode only_me \
-  --bid-window-sec 3 \
+  --policy only-me \
+  --policy-args '{"bidWindowSec":3}' \
   --private-key-hex-path ~/Documents/requester-private-key.hex \
   --pds-state-path ~/Documents/requester-pds-state.db \
   --exec "echo hello && uname -a"
@@ -212,7 +212,7 @@ using the did-key-associator webapp at `https://qr.fedfork.com`.
 ```bash
 cd atproto-market
 deno run -A hono-bidder/mod.ts \
-  --accept-scope direct_network \
+  --policy tangled-vouch \
   --private-key-hex-path ~/Documents/bidder-aliceoa-private-key.hex \
   --pds-state-path ~/Documents/bidder-aliceoa-pds-state.db \
   --compute-provider-local
@@ -222,8 +222,8 @@ deno run -A hono-bidder/mod.ts \
 ```bash
 cd atproto-market
 deno run -A request-vm-ssh/mod.ts \
-  --policy-mode direct_network \
-  --bid-window-sec 30 \
+  --policy tangled-vouch \
+  --policy-args '{"bidWindowSec":30}' \
   --private-key-hex-path ~/Documents/requester-private-key.hex \
   --pds-state-path ~/Documents/requester-pds-state.db
 ```
@@ -338,7 +338,7 @@ T2: relay       →  atproto-relay/hono-atproto-relay --port 2584 --local-dev-re
 T3: PDS         →  hono-pds main.ts --port 2583
 T4: JSR         →  hono-jsr hono-package-registry/main.ts --base-dir .. --port 5556 --no-passthrough
 T5: bidder      →  atproto-market/hono-bidder --compute-provider-local --relay-dispatcher-host localhost:5555
-T6: requester   →  atproto-market/request-vm-ssh --dispatcher-host localhost:5555 --bid-window-sec 3
+T6: requester   →  atproto-market/request-vm-ssh --dispatcher-host localhost:5555 --policy-args '{"bidWindowSec":3}'
 ```
 
 Or one process: `deno run --allow-all atproto-market/compute-contract-full-flow/run_full_flow.ts`
@@ -353,19 +353,19 @@ Or one process: `deno run --allow-all atproto-market/compute-contract-full-flow/
 cd atproto-market
 
 # Minimal
-deno run -A request-vm-ssh/mod.ts --policy-mode only_me --bid-window-sec 3
+deno run -A request-vm-ssh/mod.ts --policy only-me --policy-args '{"bidWindowSec":3}'
 
 # Full
 deno run -A request-vm-ssh/mod.ts \
-  --policy-mode only_me \
-  --bid-window-sec 10 \
+  --policy only-me \
+  --policy-args '{"bidWindowSec":10}' \
   --private-key-hex-path ~/Documents/requester-private-key.hex \
   --pds-state-path ~/Documents/requester-pds-state.db \
   --exec "hostname; echo PASS; id -un" \
   --keep-vm
 
 # Skip SSH (testing only)
-deno run -A request-vm-ssh/mod.ts --skip-ssh --keep-vm --bid-window-sec 3
+deno run -A request-vm-ssh/mod.ts --skip-ssh --keep-vm --policy-args '{"bidWindowSec":3}'
 ```
 
 ### Bidder (`hono-bidder`)
@@ -376,7 +376,7 @@ cd atproto-market
 # Minimal local
 deno run -A hono-bidder/mod.ts \
   --compute-provider-local \
-  --accept-scope only_me
+  --policy only-me
 
 # Production (DO + firehose)
 deno run -A hono-bidder/mod.ts \
@@ -763,12 +763,12 @@ All binaries are self-contained Deno compiled executables. No runtime needed.
 
 ```bash
 # Requester: request and SSH into a VM (replace <bidder-did>)
-./request-vm-ssh --policy-mode only_me --bid-window-sec 3 \
+./request-vm-ssh --policy only-me --policy-args '{"bidWindowSec":3}' \
   --exec "hostname && uname -a"
 
 # Bidder: provide compute (requires container runtime)
 ./hono-bidder --compute-provider-local \
-  --accept-scope only_me --serve-port 0
+  --policy only-me --serve-port 0
 
 # PDS: run a personal data server
 ./hono-pds --port 2583

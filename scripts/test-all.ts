@@ -149,6 +149,7 @@ async function runTests(ws: WorkspaceTests): Promise<TestResult> {
       "--allow-write",
       "--allow-run",
       "--allow-sys",
+      "--allow-import",
       "--unstable-kv",
       "--unstable-worker-options",
       "--no-check",

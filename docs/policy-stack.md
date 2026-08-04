@@ -8,349 +8,268 @@ interface, impls, factory, and CLI. Neither ABC imports the other.
 | Layer | Package | Dir |
 |-------|---------|-----|
 | common | `policy-common` | `lib/common/policy-common/` |
+| common | `market-policy-common` | `lib/common/market-policy-common/` |
 | abc | `policy-abc` | `lib/abc/policy/` |
 | abc | `market-policy-abc` | `lib/abc/market-policy/` |
 | impl | `policy-builtin` | `lib/policy-builtin/` |
 | impl | `market-policy-only-me` | `lib/market-policy-only-me/` |
 | impl | `market-policy-direct-network-tangled-vouch` | `lib/market-policy-direct-network-tangled-vouch/` |
 | impl | `market-policy-direct-network-bsky-mutual` | `lib/market-policy-direct-network-bsky-mutual/` |
-| impl | `market-policy-remote` | `lib/market-policy-remote/` |
-| impl | `market-policy-workflow-gha` | `lib/market-policy-workflow-gha/` |
+| impl | `market-policy-registry` | `lib/market-policy-registry/` |
+| impl | `market-policy-engine-worker` | `lib/market-policy-engine-worker/` |
+| impl | `market-policy-engine-service` | `lib/market-policy-engine-service/` |
 | impl | `market-policy` | `lib/market-policy/` |
 | factory | `hono-factory-policy-builtin` | `lib/hono-factory-policy-builtin/` |
 | CLI | `hono-policy` | `hono-policy/` |
 
-## Two ABC interfaces
+## A policy is data, not a mode
+
+There is no `PolicyMode` enum. A policy is a **name plus arguments**, carried as
+an ATProto record and looked up in a registry at evaluation time. The registry
+holds two kinds:
+
+- **Trust policies** gate engagement — "may I transact with this counterparty".
+  `only-me`, `tangled-vouch`, `mutuals`. They declare a sync `decide()` over the
+  trust cache for the hot path, and a full `evaluate()` for the sandbox/remote.
+- **Work policies** gate the workload — "do I want to run this". `under-4-cpus`
+  (bidder), `bid-payload` (requester). They declare `perspectives`, so a
+  wrong-side `--policy` fails loud at the CLI instead of silently no-oping.
+
+A policy record is a **set**: `{ policies: [{name, args}], requesterDid, createdAt }`.
+Evaluation iterates the set; the first deny short-circuits.
+
+## `$type` is the engine kind
+
+`market.rfp.policy` is a strongRef, exactly like `market.rfp.payload`. The
+record it points at declares *how* it is evaluated through its own `$type` —
+the same dispatch shape consumers already use for RFP payloads.
+
+| NSID | Executed by | Trust |
+|---|---|---|
+| `...market.policies.builtin` | in-process Deno worker sandbox, first-party registry bundle | trusted |
+| `...market.policies.service` | remote XRPC policy engine | remote |
+| `...market.policies.denoWorker` | in-process Deno worker sandbox, caller-supplied bundle | untrusted, gated |
+
+Shared record fields:
+
+```
+$type        engine kind — the dispatch key
+name         registry name, e.g. "only-me"
+description  human-readable
+args         open object: { bidWindowSec, firstFree, ... }
+requesterDid
+createdAt
+signatures
+```
+
+`.service` adds `policyEngine` (a `did:web`). `.denoWorker` adds `manifest`
+(strongRef to a `compute.deno.workerManifest`) and `permissions`.
+
+## Execution: sandboxed by default
+
+Policies run inside `deno-worker-sandbox`, reusing
+`createPersistentDenoWorker` from `sandbox-deno`.
+
+Both engine kinds execute **one mechanism**: a standalone JS bundle that assigns
+`globalThis.policy`, concatenated with a host-RPC shim, loaded as a `data:` URL
+worker. Only the bundle's provenance differs.
+
+- **First-party**: `scripts/build-policy-bundle.ts` runs `deno bundle` over
+  `lib/market-policy-engine-worker/policy-entry.ts` (which imports the registry)
+  and emits `builtin-bundle.ts` exporting the bundled JS as a string constant.
+  Regenerate with `deno task build-policy-bundle`. Committing the generated
+  bundle keeps `deno compile` binaries self-contained.
+- **Caller-supplied**: the bundle string comes from the worker manifest the
+  `policies.denoWorker` record references.
+
+**Zero permissions, host-brokered I/O.** The first-party worker is created with
+`permissions: {}`. `PolicyEvalCtx`'s `resolve`, `resolveOperatorDid`,
+`getVouchedDids`, and `log` are RPC calls back to the host over postMessage; the
+host performs every network read. This is what makes the sandbox meaningful —
+policy code cannot reach the network, and no per-policy permission set has to be
+computed. A test asserts a bundle's `fetch` is blocked.
+
+Because of this, the policies themselves are pure functions of their context.
+They take no injected resolvers. That purity is the precondition for sandboxing.
+
+Untrusted bundles get only the `SandboxPermissions` their record declares, and
+only when explicitly allowed. Worker execution is capped at 30s.
+
+### Two gates
+
+| Flag | Effect |
+|---|---|
+| `--only-remote-policy-exec` | Any record that is not `policies.service` is a hard deny. No local worker starts. |
+| `--allow-untrusted-policy-exec` | Required before a `policies.denoWorker` bundle will run at all. Without it, deny. |
+
+## Trust cache
+
+The bidder keeps operators, associations, and vouch sets in one `TrustSet`
+(`market-policy-trust-abc`, pure state; `market-policy-trust-cache` does the
+I/O). Warmed at boot from its own `bidder_associate` records and the vouch
+graph; refreshed from the firehose (Jetstream delivers custom collections;
+relay/subscriberepos falls back to a TTL re-poll). Negatives are never cached —
+an association may land right after the first RFP. This replaces the old
+`vouchedDids` set, `associationCache`, and the operator-discovery cache.
+
+## Policy XRPC — both directions
+
+Call-in on the engine: `evaluatePolicy`, `checkScope` (fast trust-only
+decision), `describe` (registry introspection: names, kinds, perspectives —
+UIs stop hardcoding lists).
+
+Call-out: a served host exposes `resolveOperator`, `getVouchedDids`,
+`getTrustSet`, `getRecord` (`hono-factory-market-policy-host`), and an engine
+calls back through `createPolicyHostXrpc`. The in-process host (worker
+postMessage shim) already provides the same three reads. This is what lets a
+delegated engine ask the requester/bidder for the trust data it needs.
+
+Auth is the existing service-auth JWT pattern. Note: the policy engine's
+`verifyServiceAuthToken` is decode-and-claims only (no signature verification);
+the compute host in `deno-worker-sandbox` has a verifying verifier. Hardening
+the policy engine's to match is tracked as a follow-up.
+
+## ABC interfaces
 
 ### `policy-abc` — gate/sandbox level
 
 ```ts
-// lib/abc/policy/mod.ts — zero imports
-interface PolicyViolation { msg: string; policyId: string }
-interface PolicyResult { allow: boolean; violations: PolicyViolation[] }
 interface PolicyHandler<T = Record<string, unknown>> {
   readonly name: string;
   evaluate(ctx: T): Promise<PolicyResult>;
 }
-interface PolicyRegistry {
-  get(name: string): PolicyHandler | undefined;
-  names(): string[];
-}
 ```
 
-Used by the standalone policy engine (`hono-policy`). Generic handler over any
-context type. Policy ID is a plain string.
+Used by the standalone policy engine for worker manifest permissions.
 
 ### `market-policy-abc` — RFP/market level
 
 ```ts
-// lib/abc/market-policy/mod.ts — imports StrongRef from market-common only
-type PolicyMode = "only-me" | "tangled-vouch" | "mutuals" | "dynamic";
-const POLICY_MODES: readonly PolicyMode[] = ["only-me", "tangled-vouch", "mutuals", "dynamic"];
-const POLICY_MODE_CLI_OPTION = { type: "string", env: "POLICY_MODE", default: "only-me" };
-function isValidPolicyMode(raw: unknown): raw is PolicyMode;
+interface PolicyArgs { bidWindowSec?: number; firstFree?: boolean; [k: string]: unknown }
+interface PolicySpec { name: string; description?: string; args: PolicyArgs }
 
-interface PolicyViolation { msg: string; policyId: string | StrongRef }
-interface PolicyEvalCtx {
-  subjectDid: string;
-  rootRequesterDid: string;
-  counterpartyDid: string;
-  resolve: (ref: StrongRef) => Promise<Record<string, unknown>>;
-  resolveOperatorDid: (bidderDid: string) => Promise<string | null>;
-  log: (level: string, msg: string, meta?: Record<string, unknown>) => void;
-  policyRef?: StrongRef;
+interface NamedPolicy {
+  readonly name: string;
+  readonly description: string;
+  readonly needsVouchSet?: boolean;
+  preFilter?(input: PreFilterInput): boolean | undefined;
+  evaluate(ctx: PolicyEvalCtx): Promise<PolicyResult>;
 }
-interface FulfillmentPolicy {
-  readonly policyNsid: string;
-  buildPolicyRecord(requesterDid: string, policyEngineEndpoint?: string): Record<string, unknown>;
-  evaluate(ctx: PolicyEvalCtx): Promise<{ allow: boolean; violations: PolicyViolation[] }>;
-}
-interface RequesterAssociationChecker {
-  isRequesterAssociated(requesterDid: string): Promise<boolean>;
-}
-class PolicyModeFilter {
-  constructor(mode, selfDid, vouchedDids?, checker?);
-  preFilter(did: string): boolean;              // sync, O(1)
-  filter(issuerDid: string): Promise<boolean>;   // async, delegates to checker
-  toAcceptScopeFilter(): (input: { issuerDid: string }) => Promise<boolean>;
-}
+
+interface PolicyRegistry { get(name: string): NamedPolicy | undefined; names(): string[] }
+
+class PolicyScopeFilter { preFilter(did); filter(issuerDid); toAcceptScopeFilter(); }
 ```
 
-Used by the RFP lifecycle (requester + bidder). Two lifecycle methods
-(`buildPolicyRecord` + `evaluate`). Policy ID is `string | StrongRef` (AT
-Protocol record reference). `PolicyModeFilter` is a pure state class — no I/O in
-its methods, all I/O injected via `RequesterAssociationChecker`.
+`PolicyEvalCtx` carries `policyName`, `args`, `perspective` (who is evaluating),
+`selfDid`/`counterpartyDid`, the host-brokered I/O callbacks, and `demand`/`offer`
+(the workload refs, so work policies can see what is on the table). `PolicyScopeFilter`
+is pure state — all I/O injected.
 
-### Why two interfaces
+Trust policies are evaluated from the **perspective** that asks: the default set
+is symmetric relations (`sameOperator`, vouch, mutual) with the roles swapped.
+The bidder's fast path answers `sameOperator(counterparty, self)` from the trust
+cache — no raw DID-equality shortcut.
 
-| | `policy-abc` | `market-policy-abc` |
-|---|---|---|
-| Context | Generic `T` | Fixed `PolicyEvalCtx` (7 fields) |
-| Policy ID | `string` | `string \| StrongRef` |
-| Methods | `evaluate` only | `buildPolicyRecord` + `evaluate` |
-| State | None | `PolicyModeFilter` |
-| CLI support | None | `POLICY_MODE_CLI_OPTION` built-in |
-| Consumers | Policy engine server | RFP requester + bidder |
+## Policy arguments replace CLI flags
 
-## Common layer (`policy-common`)
-
-5 exports, zero imports. Fully compliant.
+`bidWindowSec` and `firstFree` are policy arguments, not separate flags. They
+travel with the policy record, so the thing that decides *who may bid* also
+decides *how long to wait for bids*.
 
 ```
-GATE_REGISTRY_WORKER_MANIFEST_PERMISSIONS_NSID   — string constant
-GATE_REGISTRY_WORKER_MANIFEST_PERMISSIONS_LXM    — same value
-MARKET_EVALUATE_POLICY_NSID                      — string constant
-MARKET_EVALUATE_POLICY_LXM                       — same value
-PolicyError                                      — Error + status + errorName + toJSON()
+--policy only-me --policy-args '{"bidWindowSec":10,"firstFree":true}'
 ```
 
-**NSID duplication:** `MARKET_EVALUATE_POLICY_NSID` and `MARKET_EVALUATE_POLICY_LXM`
-are defined in both `policy-common/nsids.ts` and `market-lexicons/nsids.ts` with
-identical values. Generated lexicon code vs hand-maintained constants.
-
-## Implementations
-
-### Gate-level handlers (`policy-builtin`)
-
-3 handlers, pure logic, no transport binding:
-
-| Handler | Logic |
-|---------|-------|
-| `deny-all` | Always `{ allow: false }` |
-| `allow-all` | Always `{ allow: true }` |
-| `allow-net` | Rejects any permission key not `"net"` |
-
-Exported as `BUILTIN_POLICIES: Record<string, () => PolicyHandler>`.
-`resolvePolicies(names: string[]): PolicyHandler[]` looks up by name.
-
-### FulfillmentPolicy modes
-
-| Mode | Package | Status | I/O |
-|------|---------|--------|-----|
-| `only-me` | `market-policy-only-me` | Done | `ctx.resolveOperatorDid` callback |
-| `tangled-vouch` | `market-policy-direct-network-tangled-vouch` | Done | `ctx.resolve` → `listRecords` (ATProto repo) |
-| `mutuals` | `market-policy-direct-network-bsky-mutual` | Done (needs injected `vouchResolver`) | `vouchResolver.getVouchedDids` |
-| `dynamic` | `market-policy-remote` | Done | `fetch` (HTTP POST to policy engine), JWT signing |
-| `workflow-gha` | `market-policy-workflow-gha` | **Stub** — always denies | None |
-
-### Orchestrator (`market-policy`)
-
-```ts
-// lib/market-policy/mod.ts
-function createPolicy(mode: PolicyMode, opts?): FulfillmentPolicy {
-  // switch(mode): only-me → createOnlyMePolicy()
-  //              tangled-vouch → createDirectNetworkPolicy()
-  //              mutuals → createBskyMutualPolicy()
-  //              dynamic → createRemotePolicy(opts)
-}
-function evaluateRfpPolicy(opts): Promise<{ allow: boolean; violations }> {
-  // Resolves policy strongRef from RFP → reads policyEngine field →
-  // if set: createRemotePolicy().evaluate()
-  // if unset: allow (trivially)
-}
-```
-
-`evaluateRfpPolicy` always uses `createRemotePolicy` regardless of original
-mode — it consults the `policyEngine` endpoint recorded in the policy record.
-The original `FulfillmentPolicy.evaluate()` from the mode-specific factory is
-only called directly in tests.
-
-## Hono factory (`hono-factory-policy-builtin`)
-
-Single factory. Wraps `PolicyHandler[]` into an XRPC server.
+**first-free**: `market.bids.free` is already a first-class bid payload type
+(`BIDS_FREE_NSID`, sibling of `BIDS_X402_NSID`), so freeness is read off the bid
+payload's collection with no extra fetch. With `firstFree`, the requester races
+the bid window against the first policy-allowed free bid:
 
 ```
-GET  /.well-known/did.json
-POST /xrpc/{MARKET_EVALUATE_POLICY_NSID}        — auth: requireAuth
-POST /xrpc/{GATE_REGISTRY_WORKER_MANIFEST_PERMISSIONS_NSID} — auth: requireAuth
+bid arrives
+  firstFree && payload is bids.free && policy allows bid.did -> WIN now
+  otherwise                                                  -> accumulate
+window elapses -> lowest cost among allowed
 ```
 
-Evaluation logic: iterate handlers, first deny → return 403. All pass → allow.
-
-### Pattern deviations
-
-| Deviation | Detail |
-|-----------|--------|
-| Raw `new Hono()` | Not `createFactory()` from `@hono/hono/factory` |
-| Handlers injected | CLI calls `resolvePolicies()`, passes array in. Factory does not own construction. |
-| No ABC state object | No `PolicyRegistry` instance. Handlers iterated linearly. |
-| `signingKey` dead option | Declared in `PolicyEngineFactoryOptions`, never read in body. |
-
-## CLI entrypoints
-
-### `hono-policy` — policy engine server
-
-```
---policy "allow-net,deny-all"   (comma-separated handler names)
-```
-
-- `policyRaw` → `split(",")` → `resolvePolicies()` → `PolicyHandler[]`
-- Injected into `createPolicyEngineFactory({ handlers })`
-- Serves the remote policy eval endpoint
-
-### `hono-bidder` — bidder
-
-```
---policy-mode "tangled-vouch"   (single PolicyMode)
-```
-
-- `isValidPolicyMode(raw)` guard, else `undefined`
-- Passed to `createMarketBidder({ policyMode })`
-- Constructs `PolicyModeFilter` for scope filtering + firehose pre-filtering
-
-### `request-vm-ssh` — requester
-
-```
---policy-mode "dynamic" --policy-engine-endpoint "https://..."
-```
-
-- Same `isValidPolicyMode()` guard
-- Passed to `runComputeContract({ policyMode, policyEngineEndpoint })`
-- `createPolicy(mode)` → `buildPolicyRecord()` → stamped on RFP
-- `evaluateRfpPolicy()` called pre-accept (only for `"dynamic"` mode)
+A free bid from a policy-rejected bidder is discarded rather than winning.
+`BidCollector` and `selectWinner` live in `lib/abc/requester` — pure, no timers.
 
 ## Enforcement points
 
 ```
 Requester creates RFP
   │
-  ├─ createPolicy(mode) → buildPolicyRecord() → write to ATProto repo → stamp strongRef on RFP
-  │
+  ├─ buildPolicyRecord(spec) → policies.builtin | .service | .denoWorker
+  │  → write to ATProto repo → stamp strongRef on RFP
   ▼
 RFP broadcast via firehose
   │
-  ├─ [Bidder] PolicyModeFilter.preFilter(did) — sync hot-path gate
-  │   only-me:        did === selfDid
-  │   tangled-vouch:  did === selfDid || vouchedDids.has(did)
-  │   mutuals:        same as tangled-vouch
-  │   dynamic:        allow all (defer to remote)
-  │
+  ├─ [Bidder] PolicyScopeFilter.preFilter(did) — sync hot-path gate
   ▼
 Bidder receives RFP
   │
-  ├─ [Bidder] evaluateRfpPolicy() in onRfp callback (market-bidder-compute, market-bidder-worker)
-  │   Resolves policy strongRef → if policyEngine set → POST to engine
-  │
+  ├─ [Bidder] evaluateRfpPolicy() in onRfp — dispatch on $type
   ▼
 Bidder places bid (if policy allows)
   │
   ▼
-Requester selects winner
+Requester collects bids (firstFree may end the window early)
   │
-  ├─ [Requester] evaluateRfpPolicy() pre-accept (only when mode === "dynamic")
-  │
+  ├─ [Requester] evaluateRfpPolicy() pre-accept — only for policies.service
+  │   records, and skipped when the winner already cleared policy on the
+  │   firstFree path
   ▼
 market.accept → provision VM (policy-agnostic cloud-init)
 ```
 
-## PolicyModeFilter — sync vs async
+## Policy engine server
 
-| Mode | `preFilter(did)` sync | `filter(issuerDid)` async | Remote eval |
-|------|----------------------|--------------------------|-------------|
-| `only-me` | `did === selfDid` | same | Never |
-| `tangled-vouch` | `did === selfDid \|\| vouchedDids.has(did)` | falls back to `checker.isRequesterAssociated` | Never |
-| `mutuals` | same as tangled-vouch | same | Never |
-| `dynamic` | allows all | allows all | Yes — POST to `policyEngine` URL |
+`hono-policy` serves two XRPC endpoints. `evaluatePolicy` resolves `body.name`
+against the **same registry** used for local execution, so a policy name means
+the same thing on either side of the wire; a nameless body falls through to the
+configured `PolicyHandler` chain.
+
+```
+GET  /.well-known/did.json
+POST /xrpc/com.publicdomainrelay.temp.market.evaluatePolicy
+POST /xrpc/com.publicdomainrelay.temp.compute.deno.gateRegistryWorkerManifestPermissions
+```
+
+## Where a policy is enforced
+
+The **bidder** is the enforcement point for locally-evaluated policies
+(`policies.builtin`, `policies.denoWorker`). It holds the trust data the policy
+needs — operator associations via `bidderAssociation`, the vouch graph from its
+own authenticated repo reads — and refuses to bid when the policy denies.
+
+The **requester** re-checks before accepting only when it delegated evaluation
+to an engine (`policies.service`). That is the one case where a second opinion
+is both meaningful and answerable from the requester's side; a requester
+generally cannot read the counterparty trust data a local policy depends on.
+
+Consequence worth stating plainly: for `policies.builtin`, a bidder that ignores
+the attached policy and bids anyway is not caught by the requester. Closing that
+gap needs the requester to resolve operator associations and vouch sets for
+arbitrary bidder DIDs, which `resolveOperatorDid` does not yet do everywhere
+(see STATUS_REPORT). Use `--policy-engine` when you need the decision enforced
+by a party that holds the data.
 
 ## Cloud-init: zero policy coupling
 
-`buildDefaultUserData()` in `cloud-init-common` takes `CloudInitContext` —
-no policy field. Guest VMs are provisioned identically regardless of policy
-mode. Policy gates who can bid and accept, not what runs inside the guest.
-
-## Dependency graph
-
-```
-market-lexicons (generated ATProto schema types)
-market-common (StrongRef)
-       │
-       ├── policy-common (NSIDs, PolicyError) ── zero imports
-       │       │
-       │       ├── policy-abc (PolicyHandler<T>) ── zero imports
-       │       │       │
-       │       │       ├── policy-builtin (deny-all, allow-all, allow-net)
-       │       │       │       │
-       │       │       │       └── hono-factory-policy-builtin
-       │       │       │               │
-       │       │       │               └── hono-policy (CLI)
-       │       │       │
-       │       │       └── (end of PolicyHandler tree)
-       │       │
-       │       └── (end of policy-common tree)
-       │
-       ├── market-policy-abc (FulfillmentPolicy, PolicyMode, PolicyModeFilter)
-       │       │
-       │       ├── market-policy-only-me
-       │       ├── market-policy-direct-network-tangled-vouch ── trust-graph-tangled-graph
-       │       ├── market-policy-direct-network-bsky-mutual ── trust-graph-bsky-mutuals
-       │       ├── market-policy-remote (fetch + JWT)
-       │       ├── market-policy-workflow-gha (STUB)
-       │       │
-       │       └── market-policy (orchestrator: createPolicy + evaluateRfpPolicy)
-       │               │
-       │               ├── requester-xrpc (createPolicy for RFP; evaluateRfpPolicy for accept)
-       │               ├── market-bidder (PolicyModeFilter scope + preFilter)
-       │               ├── market-bidder-compute (evaluateRfpPolicy pre-bid)
-       │               └── market-bidder-worker (evaluateRfpPolicy pre-bid)
-       │
-       └── (end of market-policy tree)
-```
-
-No cycles. No cross-repo imports for any policy package (all consumers within
-`atproto-market/`). `deno-worker-sandbox` has its own parallel
-`PermissionPolicyHandler` in `compute-deno-abc` — same concept, different
-interface, zero shared code.
-
-## Cross-repo isolation
-
-Zero consumers outside `atproto-market/` for market-policy interfaces.
-Consumers within `atproto-market/`:
-
-| Consumer | Imports |
-|----------|---------|
-| `hono-bidder/cli-args-env.ts` | `POLICY_MODE_CLI_OPTION` |
-| `hono-bidder/mod.ts` | `isValidPolicyMode`, `PolicyMode` |
-| `request-vm-ssh/cli-args-env.ts` | `POLICY_MODE_CLI_OPTION` |
-| `request-vm-ssh/mod.ts` | `isValidPolicyMode`, `PolicyMode` |
-| `lib/market-bidder/mod.ts` | `PolicyModeFilter`, `PolicyMode` |
-| `lib/market-bidder-compute/mod.ts` | `evaluateRfpPolicy` (dynamic import) |
-| `lib/market-bidder-worker/mod.ts` | `evaluateRfpPolicy` (dynamic import) |
-| `lib/requester-xrpc/mod.ts` | `createPolicy`, `evaluateRfpPolicy` (dynamic import) |
-| `lib/compute-contract-gateway-xrpc/mod.ts` | `isValidPolicyMode` |
-| `lib/abc/requester/mod.ts` | `PolicyMode` (type-level import) |
-| `hono-policy/mod.ts` | `resolvePolicies`, `createPolicyEngineFactory` |
+`buildDefaultUserData()` takes no policy field. Guests are provisioned
+identically regardless of policy. Policy gates who may bid and accept, not what
+runs inside the guest.
 
 ## Test coverage
 
 | Test | What it covers |
 |------|---------------|
-| `test/policy_server_test.ts` | Engine XRPC routes (evaluatePolicy, gateRegistryWorkerManifestPermissions) |
-| `test/policy_remote_test.ts` | `createRemotePolicy`, `createOnlyMePolicy`, `createDirectNetworkPolicy` |
+| `test/policy_registry_test.ts` | registry lookup, all three policies, `PolicyScopeFilter`, arg parsing |
+| `test/policy_engine_worker_test.ts` | `$type` dispatch, sandbox execution, host RPC, both gates, untrusted bundles, timeout, network denial |
+| `test/bid_collector_test.ts` | dedupe, winner selection, firstFree early exit and fallback |
+| `test/policy_server_named_test.ts` | engine name dispatch against the shared registry |
+| `test/policy_server_test.ts` | worker manifest permission handlers |
 | `test/bidder_policy_only_me_integration_test.ts` | only-me e2e via `runComputeContract` |
-| `test/bidder_policy_remote_integration_test.ts` | Remote policy e2e via `runComputeContract` |
-
-No integration tests for `tangled-vouch`, `mutuals`, or `workflow-gha` modes.
-
-## Known issues
-
-1. **NSID duplication.** `MARKET_EVALUATE_POLICY_NSID` / `LXM` defined in both
-   `policy-common/nsids.ts` and `market-lexicons/nsids.ts`. Lexicon code
-   generation should be the single source of truth.
-
-2. **`PolicyViolation` defined twice.** `policy-abc` uses `policyId: string`;
-   `market-policy-abc` uses `policyId: string | StrongRef`. Same name, different
-   types. Intentional (different domains) but confusing.
-
-3. **Factory pattern deviation.** `hono-factory-policy-builtin` uses raw
-   `new Hono()` instead of `createFactory()`. Handlers are injected pre-built
-   from CLI rather than constructed internally. No ABC state object
-   (`PolicyRegistry`) is instantiated.
-
-4. **`signingKey` dead option.** Declared in `PolicyEngineFactoryOptions`,
-   never read in factory body.
-
-5. **`workflow-gha` is a stub.** Always returns `{ allow: false,
-   violations: ["not yet implemented"] }`.
-
-6. **`mutuals` needs injected `vouchResolver`.** No default — logs warning and
-   denies if resolver is not provided.
+| `test/bidder_policy_remote_integration_test.ts` | service-policy e2e |
