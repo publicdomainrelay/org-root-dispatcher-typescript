@@ -34,5 +34,8 @@
     "node:util": "./lib/node-polyfills.js",
     "@publicdomainrelay/requester-xrpc": "../atproto-market/lib/requester-xrpc/mod.ts",
     "@publicdomainrelay/market-atproto": "../atproto-market/lib/market-atproto/mod.ts"
+  },
+  "tasks": {
+    "bundle-cloud-init": "deno bundle --config ../atproto-market/deno.json ../atproto-market/lib/common/cloud-init-common/mod.ts -o lib/cloud-init-common.bundle.js"
   }
 }

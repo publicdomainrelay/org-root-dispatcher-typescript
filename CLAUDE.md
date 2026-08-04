@@ -32,7 +32,7 @@ across the polyrepo, maps findings to stubs, writes `STATUS_REPORT.md`.
 This entire project exists to provision compute through the **RFP / market
 flow**. A requester posts a `compute.vm` record + a signed `market.rfp`; bidders
 bid; the winner provisions a guest **via cloud-init `user_data`**
-(`buildDefaultUserData` in `cloud-init-common`); the requester reaches the guest
+(`buildUserData` composer + module registry in `cloud-init-common`); the requester reaches the guest
 **only through the relay** (ssh `ProxyCommand` over the websocket tunnel). The
 relay is the registry. Nothing talks to a guest except through this path.
 
@@ -54,8 +54,9 @@ relay is the registry. Nothing talks to a guest except through this path.
   `https://*.localhost` → local dispatcher). Provisioning ALWAYS goes
   requester → RFP → bid → accept → cloud-init.
 - Add a second SSH/tunnel transport that the RFP cloud-init does not deploy. New
-  guest-side transport = teach `buildDefaultUserData` (or a sibling user_data
-  builder) to install it, so the RFP flow remains the only way a guest comes up.
+  guest-side transport = add a `UserDataModule` to `cloud-init-common`'s registry
+  (or a sibling user_data builder) that installs it, so the RFP flow remains the
+  only way a guest comes up.
 
 **Pre-flight before any provisioning / guest / ssh / tunnel code or test:** Does
 this go through `runComputeContract` + RFP records + cloud-init? If it calls

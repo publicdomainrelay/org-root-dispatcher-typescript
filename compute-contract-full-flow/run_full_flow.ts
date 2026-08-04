@@ -317,7 +317,7 @@ Requester                    AT Protocol (PDS/relay)              Bidder        
 ────────                     ──────────────────────              ──────                    ───────────────
 runComputeContract()
   ├─ ssh-keygen ed25519
-  ├─ buildDefaultUserData()  ──►  compute.vm record
+  ├─ buildUserData(modules)  ──►  compute.vm record
   ├─ createSignedRepoRecord  ──►  market.rfp (signed)
   ├─ discoverBidders         ──►  relay index + extraBidderDids
   ├─ submitRfp XRPC          ──►  ──►  rfpCallback → bid

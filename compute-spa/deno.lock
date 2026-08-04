@@ -1063,6 +1063,7 @@
       },
       "jsr:@publicdomainrelay/requester-abc@0.0.0": {
         "dependencies": [
+          "jsr:@publicdomainrelay/cloud-init-common@0",
           "jsr:@publicdomainrelay/logger@0",
           "jsr:@publicdomainrelay/policy-common@0",
           "jsr:@publicdomainrelay/serve@0"
