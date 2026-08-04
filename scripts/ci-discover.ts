@@ -41,8 +41,12 @@ const FLAG_MAP: Record<string, { flags: string; needsDocker: boolean }> = {
     needsDocker: false,
   },
   "atproto-market": {
-    flags: "-A --unstable-kv --no-check",
+    flags: "-A --unstable-kv --unstable-worker-options --no-check",
     needsDocker: true,
+  },
+  "policy-engine": {
+    flags: "-A --unstable-worker-options --no-check",
+    needsDocker: false,
   },
   "hono-compute-provider": {
     flags: "-A --no-check",
