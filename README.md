@@ -51,14 +51,14 @@ cd org-root-dispatcher-typescript/atproto-market
 ```bash
 deno run -A hono-bidder/mod.ts \
   --compute-provider-local \
-  --policy only-me
+  --policy bidder-only-me
 ```
 
 #### Request compute
 
 ```bash
 deno run -A request-vm-ssh/mod.ts \
-  --policy only-me
+  --policy requester-only-me
 ```
 
 ## BlueSky Accounts via QR Code Session Transfer
@@ -71,7 +71,7 @@ did-key-associator webapp at <https://qr.fedfork.com>.
 ```bash
 deno run -A hono-bidder/mod.ts \
   --compute-provider-local \
-  --policy tangled-vouch \
+  --policy bidder-tangled-vouch \
   --serve-port 0 \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
@@ -83,7 +83,7 @@ deno run -A hono-bidder/mod.ts \
 deno run -A request-vm-ssh/mod.ts \
   --atproto-oauth-qr \
   --atproto-handle alice.bsky.social \
-  --policy tangled-vouch \
+  --policy requester-tangled-vouch \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
 ```
