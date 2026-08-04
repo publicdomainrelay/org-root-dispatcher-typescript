@@ -88,6 +88,51 @@ deno run -A request-vm-ssh/mod.ts \
   --firehose-mode subscriberepos
 ```
 
+## Secrets
+
+Ship secrets to the VM without putting them in cloud-init. Build the bundle from
+environment variables with `jq`, pass the file to `--secrets`:
+
+```bash
+umask 077
+
+jq -n \
+  --arg hf "$HUGGING_FACE_HUB_TOKEN" \
+  --arg npm "$NPM_TOKEN" \
+  '[
+    {path: "/root/.cache/huggingface/token", value: $hf},
+    {path: "/root/.npmrc", value: ("//registry.npmjs.org/:_authToken=" + $npm)}
+  ]' > /tmp/secrets.json
+
+deno run -A request-vm-ssh/mod.ts \
+  --policy requester-only-me \
+  --secrets /tmp/secrets.json \
+  --exec 'cat /root/.cache/huggingface/token; exit'
+
+rm -f /tmp/secrets.json
+```
+
+Take the env var names as arguments instead of writing each one out:
+
+```bash
+jq -n --args '[$ARGS.positional[] | {path: ("/root/secrets/" + ascii_downcase), value: env[.]}]' \
+  HUGGING_FACE_HUB_TOKEN NPM_TOKEN > /tmp/secrets.json
+```
+
+The values never enter the `compute.vm` record, the firehose, or any PDS record.
+`--secrets` starts a Hono server that lives only for the contract, reachable only
+through the ingress proxy. When a bid wins, its
+`com.publicdomainrelay.temp.compute.config.wif.simple` config says which OIDC
+issuer will vouch for the VM and what subject it will carry, and that becomes an
+in-memory grant: read, one route, one subject, one issuer. The guest proves
+possession of its sshd host key to get a workload identity token whose subject
+the *provider* assembles from the droplet tags, exchanges it for one audienced at
+the requester, and fetches the bundle. Every entry lands `0600` under a `0700`
+parent. The grant is revoked when the VM delete event is sent, so a leaked token
+stops working.
+
+Full walkthrough: [`atproto-market/request-vm-ssh/README.md`](atproto-market/request-vm-ssh/README.md#secrets---secrets).
+
 ## Protocol
 
 ```mermaid
