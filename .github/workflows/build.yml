@@ -103,7 +103,7 @@ jobs:
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-bidder-${{ matrix.suffix }}.exe atproto-market/hono-bidder/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/request-vm-ssh-${{ matrix.suffix }}.exe atproto-market/request-vm-ssh/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/compute-contract-gateway-${{ matrix.suffix }}.exe atproto-market/hono-compute-contract-gateway/mod.ts
-          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-${{ matrix.suffix }}.exe atproto-market/hono-policy/mod.ts
+          deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-policy-engine-${{ matrix.suffix }}.exe policy-engine/hono-policy-engine/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-plc-${{ matrix.suffix }}.exe atproto-market/hono-plc/mod.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-pds-${{ matrix.suffix }}.exe hono-pds/main.ts
           deno compile --allow-all --target ${{ matrix.target }} --output dist/hono-did-key-ingress-proxy-${{ matrix.suffix }}.exe did-key-ingress-proxy/hono-did-key-ingress-proxy/mod.ts
