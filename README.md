@@ -46,19 +46,21 @@ cd org-root-dispatcher-typescript/atproto-market
 
 ### Ephemeral Accounts with association records
 
+Defaults to `--policy only-me`, so make sure you associate the bidder and
+requester with the same ATproto account when prompted to scan QR code / see link
+to `qr.fedfork.com` in logs.
+
 #### Bid on compute contracts
 
 ```bash
 deno run -A hono-bidder/mod.ts \
-  --compute-provider-local \
-  --policy bidder-only-me
+  --compute-provider-local
 ```
 
 #### Request compute
 
 ```bash
-deno run -A request-vm-ssh/mod.ts \
-  --policy requester-only-me
+deno run -A request-vm-ssh/mod.ts
 ```
 
 ## BlueSky Accounts via QR Code Session Transfer
@@ -71,7 +73,7 @@ did-key-associator webapp at <https://qr.fedfork.com>.
 ```bash
 deno run -A hono-bidder/mod.ts \
   --compute-provider-local \
-  --policy bidder-tangled-vouch \
+  --policy tangled-vouch \
   --serve-port 0 \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
@@ -83,55 +85,74 @@ deno run -A hono-bidder/mod.ts \
 deno run -A request-vm-ssh/mod.ts \
   --atproto-oauth-qr \
   --atproto-handle alice.bsky.social \
-  --policy requester-tangled-vouch \
+  --policy tangled-vouch \
   --no-ingress-proxy \
   --firehose-mode subscriberepos
 ```
 
 ## Secrets
 
-Ship secrets to the VM without putting them in cloud-init. Build the bundle from
-environment variables with `jq`, pass the file to `--secrets`:
+To send secrets to the VM without putting them in cloud-init (public ATproto
+data), just pass a JSON file to `--secrets`:
+
+For example, if you wanted to send your https://cocore.dev token to a new VM you
+could do it like so:
 
 ```bash
-umask 077
+# Set ATPROTO_HANDLE, ATPROTO_DID, and ATPROTO_PASSWORD for goat account login
+goat account login
 
-jq -n \
-  --arg hf "$HUGGING_FACE_HUB_TOKEN" \
-  --arg npm "$NPM_TOKEN" \
-  '[
-    {path: "/root/.cache/huggingface/token", value: $hf},
-    {path: "/root/.npmrc", value: ("//registry.npmjs.org/:_authToken=" + $npm)}
-  ]' > /tmp/secrets.json
+TOKEN=$(goat account service-auth \
+  --lxm dev.cocore.account.createApiKey \
+  --aud did:web:appview.cocore.dev)
+
+PI_CONFIG=$(curl -sS -X POST \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  'https://appview.cocore.dev/xrpc/dev.cocore.account.createApiKey' \
+  -d '{"name":"my-pi"}' | jq -r '{"apiKey": .secret}')
 
 deno run -A request-vm-ssh/mod.ts \
-  --policy requester-only-me \
-  --secrets /tmp/secrets.json \
-  --exec 'cat /root/.cache/huggingface/token; exit'
-
-rm -f /tmp/secrets.json
+  --policy only-me \
+  --exec 'cat .pi/agent/cocore-config.json; exit' \
+  --secrets <(jq -n --arg pi "${PI_CONFIG}" '[
+    {path: "/root/.pi/agent/cocore-config.json", value: $pi}
+  ]')
 ```
 
-Take the env var names as arguments instead of writing each one out:
+Here's a quick `jq` example of using env var names as arguments instead of
+writing each one out (then you'd pass `--secrets /tmp/secrets.json`):
 
 ```bash
 jq -n --args '[$ARGS.positional[] | {path: ("/root/secrets/" + ascii_downcase), value: env[.]}]' \
-  HUGGING_FACE_HUB_TOKEN NPM_TOKEN > /tmp/secrets.json
+  SOME_API_KEY OTHER_ENV_VAR > /tmp/secrets.json
 ```
 
-The values never enter the `compute.vm` record, the firehose, or any PDS record.
-`--secrets` starts a Hono server that lives only for the contract, reachable only
-through the ingress proxy. When a bid wins, its
-`com.publicdomainrelay.temp.compute.config.wif.simple` config says which OIDC
-issuer will vouch for the VM and what subject it will carry, and that becomes an
-in-memory grant: read, one route, one subject, one issuer. The guest proves
-possession of its sshd host key to get a workload identity token whose subject
-the *provider* assembles from the droplet tags, exchanges it for one audienced at
-the requester, and fetches the bundle. Every entry lands `0600` under a `0700`
-parent. The grant is revoked when the VM delete event is sent, so a leaked token
-stops working.
+Passing secrets this way works by leveraging Workload Identity Federation. We
+thereby avoid storing anything sensitive in the public `compute.vm` record.
 
-Full walkthrough: [`atproto-market/request-vm-ssh/README.md`](atproto-market/request-vm-ssh/README.md#secrets---secrets).
+- Each bid's config carries a
+  `com.publicdomainrelay.temp.compute.config.wif.simple` instance which
+  tells the requester prior to accept what the OIDC issuer will be for the VM
+  and how it's `sub` (subject) claim will be formatted.
+
+  - This means that if a contract fails, aka the VM disappears for whatever
+    reason. We can turn around and *accept a different bid* from another
+    provider! This loose coupling of Workload Identity Federation configuration
+    information ensures we can even preemptively spin more than one instance of
+    the compute we are requesting for resiliency. The following repo has an
+    in-depth exploitation of how workload identity works:
+    [droplet-oidc-poc](https://github.com/digitalocean-labs/droplet-oidc-poc).
+
+- `--secrets` starts an HTTP server that lives only for the contract.
+
+  - It also adds a script to the VM's cloud-init `user_data` so that When the VM
+    starts, it makes a request to this server using a token retrieved via
+    token-exchange from the bidder/compute-provider's Workload Identity issuer.
+
+  - Access to the secrets is then gated by an RBAC policy which ensures that the
+    token the VM passes to the `--secrets` HTTP server belongs to our newly spun
+    VM per the bid config Workload Identity Federation (WIF) record.
 
 ## Protocol
 
