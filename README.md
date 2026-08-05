@@ -72,6 +72,8 @@ did-key-associator webapp at <https://qr.fedfork.com>.
 
 ```bash
 deno run -A hono-bidder/mod.ts \
+  --atproto-oauth-qr \
+  --atproto-handle bob.bsky.social \
   --compute-provider-local \
   --policy tangled-vouch \
   --serve-port 0 \
