@@ -99,8 +99,8 @@ For example, if you wanted to send your https://cocore.dev token to a new VM you
 could do it like so:
 
 ```bash
-# Set ATPROTO_HANDLE, ATPROTO_DID, and ATPROTO_PASSWORD for goat account login
-goat account login
+# Set ATP_HANDLE and ATP_PASSWORD for goat account login or provide like so:
+goat account login -u "aliceoa.bsky.social" -p "aaaa-aaaa-aaaa-aaaa"
 
 TOKEN=$(goat account service-auth \
   --lxm dev.cocore.account.createApiKey \
@@ -113,11 +113,28 @@ PI_CONFIG=$(curl -sS -X POST \
   -d '{"name":"my-pi"}' | jq -r '{"apiKey": .secret}')
 
 deno run -A request-vm-ssh/mod.ts \
-  --policy only-me \
-  --exec 'cat .pi/agent/cocore-config.json; exit' \
-  --secrets <(jq -n --arg pi "${PI_CONFIG}" '[
-    {path: "/root/.pi/agent/cocore-config.json", value: $pi}
-  ]')
+  --atproto-oauth-qr \
+  --atproto-handle aliceoa.bsky.social \
+  --no-ingress-proxy \
+  --firehose-mode subscriberepos \
+  --policy tangled-vouch \
+  --secrets <(jq -n \
+    --arg pi "${PI_CONFIG}" \
+    --arg provider "cocore" \
+    --arg model "mlx-community/Ornith-1.0-9B-4bit" \
+    '[
+      {
+        path: "/root/.pi/agent/cocore-config.json",
+        value: $pi,
+      },
+      {
+        "path": "/root/.pi/agent/settings.json",
+        "value": {
+          "defaultProvider": $provider,
+          "defaultModel": $model
+        }
+      }
+    ]')
 ```
 
 Here's a quick `jq` example of using env var names as arguments instead of
