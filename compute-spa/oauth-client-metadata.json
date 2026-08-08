@@ -12,7 +12,6 @@
   "response_types": [
     "code"
   ],
-  "scope": "atproto repo:com.publicdomainrelay.temp.compute.vm?action=create repo:com.publicdomainrelay.temp.market.submitRfp?action=create repo:com.publicdomainrelay.temp.market.submitAccept?action=create repo:com.publicdomainrelay.temp.badgeBlueKeys?action=create repo:com.fedproxy.rbac?action=create repo:com.fedproxy.sshPublicKey?action=create",
   "token_endpoint_auth_method": "none",
   "client_name": "Compute — publicdomainrelay",
   "client_uri": "https://compute.fedfork.com"

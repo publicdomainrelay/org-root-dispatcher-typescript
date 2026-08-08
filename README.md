@@ -1,7 +1,8 @@
 # Compute Contracts - Pre-Alpha
 
 - [Blog](https://blog.socialweb.computer)
-- <https://github.com/publicdomainrelay/org-root-dispatcher-typescript>
+- [Deck: ATproto PDX: 2026-08-04: Compute Contracts](https://docs.google.com/presentation/d/1hvM3jk-t_3vkjIXr1gJL1fmtUMhHm76369Vos3QumZU/edit)
+- <https://github.com/publicdomainrelay/socialweb-computer>
 - [*Fancy* version of this content](./fancy/)
 
 This is a spec for ATProto accounts to request and advertise (compute)
@@ -23,7 +24,9 @@ The flow is: Request For Proposal -> Bid -> Accept -> Receipt
 > everything using your favorite LLM etc. let's please have many
 > implementations! :D
 
-[![bsky-jetstream](https://asciinema.org/a/1260738.svg)](https://asciinema.org/a/1260738)
+- Asciinema version of the following video: <https://asciinema.org/a/1262425>
+
+<iframe width="100%" height="auto" style="aspect-ratio:16/9" src="https://www.youtube.com/embed/LftvIIfQPtU?si=YRtavzUgxnkMfPLL" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Quickstart
 

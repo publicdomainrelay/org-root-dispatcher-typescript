@@ -10,6 +10,7 @@
     "@publicdomainrelay/fedproxy-rbac-common": "jsr:@publicdomainrelay/fedproxy-rbac-common@^0",
     "@publicdomainrelay/market-common": "jsr:@publicdomainrelay/market-common@^0",
     "@publicdomainrelay/hostname-helpers": "jsr:@publicdomainrelay/hostname-helpers@^0",
+    "@publicdomainrelay/oauth-scope": "../typescript-helpers/lib/oauth-scope/mod.ts",
     "@noble/curves": "npm:@noble/curves@^1.9.7",
     "@noble/hashes": "npm:@noble/hashes@^1.8.0",
     "@ipld/dag-cbor": "npm:@ipld/dag-cbor@^9",

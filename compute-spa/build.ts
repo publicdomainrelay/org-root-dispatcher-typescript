@@ -1,3 +1,5 @@
+import { COMPUTE_SPA_OAUTH_SCOPE } from "@publicdomainrelay/oauth-scope";
+
 const DIST = import.meta.dirname + "/dist";
 
 try { await Deno.mkdir(DIST, { recursive: true }); } catch { /* exists */ }
@@ -13,9 +15,17 @@ const bundleCmd = new Deno.Command("deno", {
 const bundleStatus = await bundleCmd.output();
 if (!bundleStatus.success) Deno.exit(bundleStatus.code);
 
-for (const f of ["styles.css", "oauth-client-metadata.json"]) {
-  await Deno.copyFile(`${import.meta.dirname}/${f}`, `${DIST}/${f}`);
-}
+// Copy static assets; oauth-client-metadata.json scope is injected from the
+// single-source oauth-scope package (source file carries no scope field).
+await Deno.copyFile(`${import.meta.dirname}/styles.css`, `${DIST}/styles.css`);
+const metadata = JSON.parse(
+  await Deno.readTextFile(`${import.meta.dirname}/oauth-client-metadata.json`),
+) as Record<string, unknown>;
+metadata.scope = COMPUTE_SPA_OAUTH_SCOPE.join(" ");
+await Deno.writeTextFile(
+  `${DIST}/oauth-client-metadata.json`,
+  JSON.stringify(metadata, null, 2) + "\n",
+);
 
 const html = `<!DOCTYPE html>
 <html lang="en">

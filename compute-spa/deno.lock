@@ -763,6 +763,24 @@
           "jsr:@publicdomainrelay/firehose-watcher-abc@0"
         ]
       },
+      "jsr:@publicdomainrelay/guest-capability-abc@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/cloud-init-common@0",
+          "jsr:@publicdomainrelay/fedproxy-rbac-common@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/guest-capability-secrets@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/did-key-ingress-proxy@0",
+          "jsr:@publicdomainrelay/guest-capability-abc@0",
+          "jsr:@publicdomainrelay/hono-factory-secrets-oidc@0",
+          "jsr:@publicdomainrelay/logger@0",
+          "jsr:@publicdomainrelay/secrets-common@0",
+          "jsr:@publicdomainrelay/secrets-oidc@0",
+          "jsr:@publicdomainrelay/serve@0",
+          "npm:@atproto/crypto@0.5"
+        ]
+      },
       "jsr:@publicdomainrelay/hono-did-key-ingress-proxy-tunnel-subscriber@0.0.0": {
         "dependencies": [
           "jsr:@publicdomainrelay/did-key-ingress-proxy-subscriber-xrpc@0",
@@ -896,6 +914,13 @@
           "jsr:@publicdomainrelay/sandbox-deno@0"
         ]
       },
+      "jsr:@publicdomainrelay/hono-factory-secrets-oidc@0.0.0": {
+        "dependencies": [
+          "jsr:@hono/hono@4",
+          "jsr:@publicdomainrelay/secrets-common@0",
+          "jsr:@publicdomainrelay/secrets-oidc@0"
+        ]
+      },
       "jsr:@publicdomainrelay/hono-factory-static-files-fs@0.1.0": {
         "dependencies": [
           "jsr:@hono/hono@4",
@@ -942,6 +967,7 @@
       },
       "jsr:@publicdomainrelay/market-settlement-free@0.0.0": {},
       "jsr:@publicdomainrelay/market-settlement-x402@0.0.0": {},
+      "jsr:@publicdomainrelay/oauth-scope@0.0.0": {},
       "jsr:@publicdomainrelay/oauth-server-common@0.0.0": {},
       "jsr:@publicdomainrelay/oidc-issuer-abc@0.0.0": {
         "dependencies": [
@@ -1077,6 +1103,7 @@
           "jsr:@publicdomainrelay/did-key-ingress-proxy@0",
           "jsr:@publicdomainrelay/did-plc@0",
           "jsr:@publicdomainrelay/fedproxy-rbac-common@0",
+          "jsr:@publicdomainrelay/guest-capability-abc@0",
           "jsr:@publicdomainrelay/hono-factory-atproto-repo-deno@0",
           "jsr:@publicdomainrelay/logger@0",
           "jsr:@publicdomainrelay/market-abc@0",
@@ -1119,6 +1146,15 @@
         "dependencies": [
           "jsr:@publicdomainrelay/device-key-abc@0",
           "jsr:@publicdomainrelay/logger@0"
+        ]
+      },
+      "jsr:@publicdomainrelay/secrets-common@0.0.0": {},
+      "jsr:@publicdomainrelay/secrets-oidc@0.0.0": {
+        "dependencies": [
+          "jsr:@publicdomainrelay/oidc-issuer-abc@0",
+          "jsr:@publicdomainrelay/rbac-atproto@0",
+          "jsr:@publicdomainrelay/secrets-common@0",
+          "npm:jose@5"
         ]
       },
       "jsr:@publicdomainrelay/serve@0.0.0": {
